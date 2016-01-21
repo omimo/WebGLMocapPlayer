@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - test 1</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+
+		</style>
+
+		<script src="js/bvhReader.js"></script>
+
+		<script src="bower_components/jquery/dist/jquery.min.js"></script>
+
+		<script src="bower_components/three.js/build/three.min.js"></script>
+		<script src="bower_components/three.js/examples/js/loaders/ColladaLoader.js"></script>
+		<script src="bower_components/three.js/examples/js/loaders/AssimpJSONLoader.js"></script>
+		<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+		<script src="bower_components/three.js/examples/js/loaders/collada/Animation.js"></script>
+		<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+
+	</head>
+	<body>
+
+
+		<script type="text/javascript">
+
+		function load_bvh() {
+			var reader = new BVHReader();
+	reader.load("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function(data){
+		bvh = data;
+		console.log("Loaded the BVH File.");
+		bvh.jointArray.forEach(function(joint, index) {
+			console.log("ddfs");
+			var jointMesh = new THREE.Mesh(new THREE.SphereGeometry(.1,20,20), jointmaterial);
+			jointMesh.position.set(joint.offset[0],joint.offset[1],joint.offset[2]);
+			scene.add( jointMesh );
+			console.log(jointMesh);
+		});
+
+	});
+		}
+	
+		</script>	
+
+
+		<script>
+
+		var scene, camera, renderer;
+	 var geometry, material, mesh;
+
+
+	 var onProgress = function ( xhr ) {
+	 	if ( xhr.lengthComputable ) {
+	 		var percentComplete = xhr.loaded / xhr.total * 100;
+	 		console.log( Math.round(percentComplete, 2) + '% downloaded' );
+	 	}
+	 };
+
+	 var onError = function ( xhr ) {
+	 };
+
+
+
+	 load_bvh();
+	 init();
+	 animate();
+
+	 function init() {
+
+			 scene = new THREE.Scene();
+
+			 camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+			 camera.position.set( 2, 2, 3 );
+			 camera.position.z = 50;
+
+			 geometry = new THREE.BoxGeometry( 2, 2, 2 );
+			 material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );
+
+			 mesh = new THREE.Mesh( geometry, material );
+			 mesh.position.set(0,10,20);
+			 scene.add( mesh );
+
+			 // Grid
+
+			 var size = 14, step = 1;
+
+			 var geometry = new THREE.Geometry();
+			 var material = new THREE.LineBasicMaterial( { color: 0x303030 } );
+
+			 for ( var i = - size; i <= size; i += step ) {
+
+				 geometry.vertices.push( new THREE.Vector3( - size, - 0.04, i ) );
+				 geometry.vertices.push( new THREE.Vector3(   size, - 0.04, i ) );
+
+				 geometry.vertices.push( new THREE.Vector3( i, - 0.04, - size ) );
+				 geometry.vertices.push( new THREE.Vector3( i, - 0.04,   size ) );
+
+			 }
+
+			 var line = new THREE.LineSegments( geometry, material );
+			 scene.add( line );
+
+
+			 // instantiate a loader
+			//  var loader0 = new THREE.ColladaLoader();
+			 //
+			//  loader0.load(
+			//  	// resource URL
+			//  	'res/avstat.dae',
+			//  	// Function when resource is loaded
+			//  	function ( collada ) {
+			 //
+			// 		dae = collada.scene;
+			// 		console.log(collada);
+			// 		console.log(collada.scene);
+			 //
+			// 		dae.traverse( function ( child ) {
+			 //
+			// 			if ( child instanceof THREE.SkinnedMesh ) {
+			 //
+			// 				var animation = new THREE.Animation( child, child.geometry.animation );
+			// 				animation.play();
+			 //
+			// 			}
+			 //
+			// 		} );
+			 //
+			// 		dae.scale.x = dae.scale.y = dae.scale.z = 0.002;
+			// 		dae.updateMatrix();
+			 //
+			//  		scene.add( dae );
+			//  	},
+			//  	// Function called when download progresses
+			//  	function ( xhr ) {
+			//  		console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+			//  	}
+			//  );
+
+			// Load jeep model using the AssimpJSONLoader
+	 	 var loader1 = new THREE.AssimpJSONLoader();
+	 	 loader1.load( 'res/avstat.json', function ( object ) {
+
+	 	 	object.scale.multiplyScalar( 0.1 );
+			object.position.set(0,0,0);
+	 	 	scene.add( object );
+
+	 	 }, onProgress, onError );
+
+			var loader2 = new THREE.AssimpJSONLoader();
+			loader2.load('res/avstat.json', function (object) {
+				object.scale.multiplyScalar( .2 );
+				//scene.add( object );
+				//console.log(object);
+
+				jointmaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe: true } );
+
+				object.traverse( function ( child ) {
+					var joint = new THREE.Mesh(new THREE.SphereGeometry(.1,20,20), jointmaterial);
+					joint.position.set(child.position.x,child.position.y,child.position.z);
+					scene.add( joint );
+					console.log(child);
+				});
+			});
+
+			 renderer = new THREE.WebGLRenderer();
+			 renderer.setSize( window.innerWidth, window.innerHeight );
+			 renderer.setClearColor( 0xcccccc, 1);
+			 document.body.appendChild( renderer.domElement );
+
+			 controls = new THREE.OrbitControls( camera, renderer.domElement );
+	 }
+
+	 function animate() {
+
+			 requestAnimationFrame( animate );
+
+			 mesh.rotation.x += 0.01;
+			 mesh.rotation.y += 0.02;
+
+			 renderer.render( scene, camera );
+
+	 }
+
+		</script>
+	</body>
+</html>

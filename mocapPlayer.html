@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>WebGL Mocap Viewer</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+
+		</style>
+
+		<script src="js/bvhReader.js"></script>
+
+		<script src="bower_components/mathjs/dist/math.min.js"></script>
+		<script src="bower_components/jquery/dist/jquery.min.js"></script>
+		<script src="bower_components/three.js/build/three.min.js"></script>
+		<script src="bower_components/three.js/examples/js/loaders/ColladaLoader.js"></script>
+		<script src="bower_components/three.js/examples/js/loaders/AssimpJSONLoader.js"></script>
+		<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+		<script src="bower_components/three.js/examples/js/loaders/collada/Animation.js"></script>
+		<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+
+	</head>
+	<body>
+
+
+		<script type="text/javascript">
+		var jointMeshes = [];
+		var animIndex = 0;
+
+		function load_bvh() {
+			jointmaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe: true } );
+			console.log("Loading the BVH file ...");
+			var reader = new BVHReader();
+
+			reader.load("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function(data){
+				bvh = data;
+				console.log("BVH file loaded.");
+
+				bvh.jointArray.forEach(function(joint, index) {
+					var jointMesh = new THREE.Mesh(new THREE.SphereGeometry(.4,20,20), jointmaterial);
+					jointMesh.bvhIndex = index;
+					jointMeshes.push(jointMesh);
+					scene.add(jointMesh);
+				});
+			});
+		}
+
+		function animFrame(frame) {
+			jointMeshes.forEach(function(joint, index) {
+				joint.position.set(bvh.jointArray[index].positions[frame][0],
+					bvh.jointArray[index].positions[frame][1],bvh.jointArray[index].positions[frame][2]);
+			});
+		}
+	
+		</script>	
+
+
+		<script>
+
+		var scene, camera, renderer;
+	 var geometry, material, mesh;
+
+
+	 var onProgress = function ( xhr ) {
+	 	if ( xhr.lengthComputable ) {
+	 		var percentComplete = xhr.loaded / xhr.total * 100;
+	 		console.log( Math.round(percentComplete, 2) + '% downloaded' );
+	 	}
+	 };
+
+	 var onError = function ( xhr ) {
+	 };
+
+
+
+	
+	 init();
+	 animate();
+
+	 function init() {
+
+			 scene = new THREE.Scene();
+
+			 camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+			 camera.position.set( 2, 2, 3 );
+			 camera.position.z = 50;
+
+
+			 // Grid
+
+			 var size = 150, step = 10;
+
+			 var geometry = new THREE.Geometry();
+			 var material = new THREE.LineBasicMaterial( { color: 0x303030 } );
+
+			 for ( var i = - size; i <= size; i += step ) {
+
+				 geometry.vertices.push( new THREE.Vector3( - size, - 0.04, i ) );
+				 geometry.vertices.push( new THREE.Vector3(   size, - 0.04, i ) );
+
+				 geometry.vertices.push( new THREE.Vector3( i, - 0.04, - size ) );
+				 geometry.vertices.push( new THREE.Vector3( i, - 0.04,   size ) );
+
+			 }
+
+			 var line = new THREE.LineSegments( geometry, material );
+			 scene.add( line );
+
+
+			 load_bvh();
+
+
+			 renderer = new THREE.WebGLRenderer();
+			 renderer.setSize( window.innerWidth, window.innerHeight );
+			 renderer.setClearColor( 0xcccccc, 1);
+			 document.body.appendChild( renderer.domElement );
+
+			 controls = new THREE.OrbitControls( camera, renderer.domElement );
+	 }
+
+	 function animate() {
+
+			 requestAnimationFrame( animate );
+
+			 if (typeof bvh !== 'undefined'){
+			 animFrame(animIndex);
+			 animIndex++;
+			 animIndex = animIndex % bvh.frameCount;
+			 
+			}
+			 renderer.render( scene, camera );
+
+	 }
+
+		</script>
+	</body>
+</html>

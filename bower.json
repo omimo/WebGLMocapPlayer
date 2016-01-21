@@ -1,0 +1,31 @@
+{
+  "name": "WebGL MOCAP Player",
+  "authors": [
+    "Omid <omid.alemi@gmail.com>"
+  ],
+  "description": "A WebGL Motion Capture Player",
+  "main": "mocapPlayer.html",
+  "moduleType": [],
+  "keywords": [
+    "mocap",
+    "webgl",
+    "threejs",
+    "player",
+    "animation",
+    "bvh"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~2.2.0",
+    "mathjs": "~2.6.0",
+    "three.js": "threejs#*"
+  }
+}

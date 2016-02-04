@@ -5,8 +5,12 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
+		
 		</style>
+		<link rel="stylesheet" href="style/pace.css"></link>
+
 		<script src="js/bvhReader.js"></script>
+		<script src="bower_components/PACE/pace.min.js"></script>
 		<script src="bower_components/mathjs/dist/math.min.js"></script>
 		<script src="bower_components/jquery/dist/jquery.min.js"></script>
 		<script src="bower_components/three.js/build/three.min.js"></script>
@@ -22,6 +26,13 @@
 		var boneMeshes = [];
 		var boneLines = [];
 		var animIndex = 1;
+
+		var playing = false;
+
+		//var bvhFileName = "res/AV_8Walk_Meredith_HVHA_Rep1.bvh";
+		// var bvhFileName = "res/35_01.bvh";
+		var bvhFileName = "res/10_HVHA_8_walk_meredith1.bvh";
+		//var bvhFileName = "res/GEMMA_DANCE_TRACK1_0002.bvh";
 
 		function load_bvh() {
 			jointmaterial = new THREE.MeshBasicMaterial( { color: 0x0066ff, wireframe: true } );
@@ -40,15 +51,29 @@
 				});
 
 			console.log("Loading the BVH file ...");
-
+			Pace.start();
 			var reader = new BVHReader();
 
-			reader.load("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function(data){
+			reader.load(bvhFileName, function(data){
 				bvh = data;
 				console.log("BVH file loaded.");
+
 				bvh.jointArray.forEach(function(joint, index) {
-					var jointMesh = new THREE.Mesh(new THREE.SphereGeometry(1,20,20), jointmaterial2);
+					var jointMesh = new THREE.Mesh(new THREE.SphereGeometry(1.5,40,40), jointmaterial2);
 					jointMesh.bvhIndex = index;
+
+					var a,b,c;
+
+					if (!joint.isEndSite()) {
+					a = joint.channelNames[joint.channelNames.length - 3][0];
+					b = joint.channelNames[joint.channelNames.length - 2][0];
+					c = joint.channelNames[joint.channelNames.length - 1][0];
+
+				}
+
+					jointMesh.rotOrder = a+b+c;
+					console.log(a+b+c);
+
 					jointMeshes.push(jointMesh);
 					scene.add(jointMesh);
 				});
@@ -57,80 +82,135 @@
 					st = new THREE.Vector3().fromArray(bb[0].positions[0]);
 					en = new THREE.Vector3().fromArray(bb[1].positions[0]);
 					var h = st.distanceTo(en);
-					var boneMesh = new THREE.Mesh(new THREE.CylinderGeometry(1,1,h,20), bonematerial2);
+					var bgeometry = new THREE.CylinderGeometry(1,1,h,20);
+
+					bgeometry.translate( 0, -h/2, 0 );
+
+					var boneMesh = new THREE.Mesh(bgeometry, bonematerial2);
 					boneMesh.joint1Index = bb[0].jointIndex;
 					boneMesh.joint2Index = bb[1].jointIndex;
-					boneMesh.rotationAutoUpdate = false;
+					//boneMesh.rotationAutoUpdate = false;
+
 					boneMeshes.push(boneMesh);
 					scene.add(boneMesh);
 				});
-				// bvh.connectivityMatrix.forEach(function(bb, index) {
-					// 	var lineGeometry = new THREE.Geometry();
-					// 	lineGeometry.vertices.push(
-							// 			new THREE.Vector3().fromArray(bb[0].positions[0]),
-							// 			new THREE.Vector3().fromArray(bb[1].positions[0]));
-					// 	var boneLine = new THREE.Line(lineGeometry, bonematerial2);
-					
-					// 	boneLine.joint1Index = bb[0].jointIndex;
-					// 	boneLine.joint2Index = bb[1].jointIndex;
-					// 	boneLines.push(boneLine);
-					// 	scene.add(boneLine);
-				// });
 				
 			});
 		}
 
+		function angle_trunc(a) {
+			while (a < 0)
+				 a += math.pi * 2;
+			//lse
+			//	return a;
+			return a;
+		}
+
 		function animFrame(frame) {
 			jointMeshes.forEach(function(joint, index) {
-				joint.position.set(bvh.jointArray[index].positions[frame][0],
-					bvh.jointArray[index].positions[frame][1],bvh.jointArray[index].positions[frame][2]);
+				joint.position.set(
+					bvh.jointArray[index].positions[frame][0],
+					bvh.jointArray[index].positions[frame][1],
+					bvh.jointArray[index].positions[frame][2]);
 			});
 
 			boneMeshes.forEach(function(bone, index) {
 				firstJoint = bvh.jointArray[bone.joint1Index];
 				secondJoint = bvh.jointArray[bone.joint2Index];
 
+
+			bone.position.set(firstJoint.positions[frame][0],
+								firstJoint.positions[frame][1],
+								firstJoint.positions[frame][2]);
+
+
+				theta_x = angle_trunc(firstJoint.channels[frame][firstJoint.channels[frame].length - 3]* Math.PI / 180);
+				theta_y = angle_trunc(firstJoint.channels[frame][firstJoint.channels[frame].length - 2]* Math.PI / 180);
+				theta_z = angle_trunc(firstJoint.channels[frame][firstJoint.channels[frame].length - 1]* Math.PI / 180);
+
+				//bone.rotation.set(theta_x,theta_y,theta_z,firstJoint.rotOrder);
+				//bone.rotation.set(theta_x,theta_y,theta_z,"XYZ");
+
+				 torad = Math.PI / 180;
+				var rotMat = new THREE.Matrix4();
+				var R = firstJoint.rotations[frame];
+				rotMat.set(R[0][0],R[1][0],R[2][0],0,
+						R[0][1],R[1][1],R[2][1],0,
+						R[0][2],R[1][2],R[2][2],0,
+							0	  ,0      ,0      ,0);
+				bone.rotation.setFromRotationMatrix(rotMat,firstJoint.rotOrder);
 				
-				
+
+				/// 4x4 
 
 
-				// torad = Math.PI / 180;
-				// var rotMat = new THREE.Matrix4();
-				// var R = firstJoint.rotations[frame];
-				// rotMat.set(R[0][0],R[1][0],R[2][0],0,
-				// 		R[0][1],R[1][1],R[2][1],0,
-				// 		R[0][2],R[1][2],R[2][2],0,
-				// 			0	  ,0      ,0      ,0);
+				/// move origin (.translate)
+				/// rotate
+				/// translate (world position + offeset)
 
-				//bone.rotation.setFromRotationMatrix(rotMat,"XYZ");
+			});
+		}
 
-				//bone.rotation.fromArray(firstJoint.channels[frame]);
-				// bone.rotation.set(firstJoint.channels[frame][0],
-				// 				  firstJoint.channels[frame][1],
-				// 				  firstJoint.channels[frame][2]);
+		function animFrame0(frame) {
+			jointMeshes.forEach(function(joint, index) {
+				joint.position.set(
+					bvh.jointArray[index].positions[frame][0],
+					bvh.jointArray[index].positions[frame][1],
+					bvh.jointArray[index].positions[frame][2]);
+			});
 
+			boneMeshes.forEach(function(bone, index) {
+				firstJoint = bvh.jointArray[bone.joint1Index];
+				secondJoint = bvh.jointArray[bone.joint2Index];
 
 				dx = secondJoint.positions[frame][0]-firstJoint.positions[frame][0];
 				dy = secondJoint.positions[frame][1]-firstJoint.positions[frame][1];
 				dz = secondJoint.positions[frame][2]-firstJoint.positions[frame][2];
 
-				theta_z = math.atan2(-dx,-dy);
-				theta_y = math.atan2(-dz,dx);
-				theta_x = math.atan2(-dz,-dy);
+			var appr = 3;
+				if (appr == 1) {				
+				theta_z = angle_trunc(math.atan2(dx,dy));
+				theta_y = angle_trunc(math.atan2(dz,dx));
+				theta_x = angle_trunc(math.atan2(dy,dz));
 
 				bone.rotation.set(theta_x,theta_y,theta_z);
-				// bone.rotation.x = firstJoint.channels[firstJoint.rotationIndex.x] * torad;
-				// bone.rotation.y = firstJoint.channels[firstJoint.rotationIndex.y] * torad;
-				// bone.rotation.z = firstJoint.channels[firstJoint.rotationIndex.z] * torad;
-				// bone.rotation.x = bone.rotation.x * torad;
-				// bone.rotation.y = bone.rotation.y * torad;
-				// bone.rotation.z = bone.rotation.z * torad;
+			}
+			else if (appr == 2) {
+				theta_z = angle_trunc(math.atan2(secondJoint.positions[frame][0],secondJoint.positions[frame][1]) - math.atan2(firstJoint.positions[frame][0],firstJoint.positions[frame][1]));
+
+				theta_y = angle_trunc(math.atan2(secondJoint.positions[frame][0],secondJoint.positions[frame][2]) - math.atan2(firstJoint.positions[frame][0],firstJoint.positions[frame][2]));
+
+				theta_x = angle_trunc(math.atan2(secondJoint.positions[frame][2],secondJoint.positions[frame][1]) - math.atan2(firstJoint.positions[frame][2],firstJoint.positions[frame][1]));
+
+				bone.rotation.set(theta_x,theta_y,theta_z);
+			} else if (appr == 3) {
+				theta_x = firstJoint.channels[frame][firstJoint.channels[frame].length - 3]* Math.PI / 180;
+				theta_y = firstJoint.channels[frame][firstJoint.channels[frame].length - 2]* Math.PI / 180;
+				theta_z = firstJoint.channels[frame][firstJoint.channels[frame].length - 1]* Math.PI / 180;
+
+				bone.rotation.set(theta_x,theta_y,theta_z,firstJoint.rotOrder);
+			}
+				//console.log(theta_y);
+				
+				// bone.lookAt(new THREE.Vector3(
+				// 	firstJoint.positions[frame][0],
+				// 	firstJoint.positions[frame][1],
+				// 	firstJoint.positions[frame][2]));
+				//bone.rotation.z = 0;
 
 
-				h = bone.geometry.parameters.height;
+
 				bone.position.set(firstJoint.positions[frame][0]+dx/2,
 								firstJoint.positions[frame][1]+dy/2,
 								firstJoint.positions[frame][2])+dz/2;
+
+				/// 4x4 
+
+
+				/// move origin (.translate)
+				/// rotate
+				/// translate (world position + offeset)
+
 			});
 
 			boneLines.forEach(function(bone, index) {
@@ -147,6 +227,10 @@
 			return math.multiply(a, b).toArray();
 		}
 		
+		$(document).on("keypress", function (e) {
+    		if (e.charCode == 32)
+    			playing = !playing;
+		});
 		</script>
 		<script>
 		var scene, camera, renderer;
@@ -215,6 +299,7 @@
 
 			renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
+
 			renderer.setClearColor( 0xdddddd, 1);
 			document.body.appendChild( renderer.domElement );
 
@@ -225,8 +310,11 @@
 			requestAnimationFrame( animate );
 			if (typeof bvh !== 'undefined'){
 			animFrame(animIndex);
-			animIndex++;
-			animIndex = animIndex % bvh.frameCount
+			if (playing) {
+				animIndex++;
+				animIndex = animIndex % bvh.frameCount
+			}
+			
 			//  if ( Bvh.play.checked ) {
 			// var frame = ( (Date.now() - Bvh.startTime ) / Bvh.secsPerFrame / 1000) | 0;
 			// Bvh.animate( frame ); }

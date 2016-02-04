@@ -232,6 +232,7 @@ BVHReader.BVH.Skeleton = function (root, map, arr, connectivityMatrix, frameCoun
         joint.channels = joint.getChannels();
         joint.rotations = [];
         joint.positions = [];
+        joint.rotmat = [];
         for(i in joint.channels){
             var channel = joint.channels[i];
             var xpos = channel[joint.positionIndex.x] || 0,
@@ -253,7 +254,7 @@ BVHReader.BVH.Skeleton = function (root, map, arr, connectivityMatrix, frameCoun
 
                 joint.positions[i] = vectorAdd(u, joint.parent.positions[i]);
                 joint.rotations[i] = matrixMultiply( rotMatrix, joint.parent.rotations[i]);
-
+                joint.rotmat[i] = rotMatrix; 
 
                  if (i==0 && (joint.name ==  "Spine" || joint.name == "L_Femur")) {
                     /*console.log("head's rot mat: ");
@@ -269,6 +270,7 @@ BVHReader.BVH.Skeleton = function (root, map, arr, connectivityMatrix, frameCoun
             }else{
                 //its the root
                 joint.rotations[i] = rotMatrix;
+                joint.rotmat[i] = rotMatrix;
                 joint.positions[i] = posMatrix;//vectorAdd(joint.offset , posMatrix);
                 // ^ we can safely ignore the root's offset
             }

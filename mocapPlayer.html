@@ -31,10 +31,10 @@
 		var animOffset = 0;
 		var playing = false;
 
-		// var bvhFileName = "res/AV_8Walk_Meredith_HVHA_Rep1.bvh";
+		 var bvhFileName = "res/AV_8Walk_Meredith_HVHA_Rep1.bvh";
 		// var bvhFileName = "res/35_01.bvh";
-		var bvhFileName = "res/10_HVHA_8_walk_meredith1.bvh";
-		//var bvhFileName = "res/GEMMA_DANCE_TRACK1_0002.bvh";
+		//var bvhFileName = "res/10_HVHA_8_walk_meredith1.bvh";
+		// var bvhFileName = "res/GEMMA_DANCE_TRACK1_0002.bvh";
 
 		function load_bvh() {
 			jointmaterial = new THREE.MeshBasicMaterial( { color: 0x0066ff, wireframe: true } );
@@ -60,25 +60,30 @@
 				bvh = data;
 				console.log("BVH file loaded.");
 
-				bvh.jointArray.forEach(function(joint, index) {
+				if (1) {
+					buildSkel(bvh.getSkeleton(),0);
+				}
+				else {
+					bvh.jointArray.forEach(function(joint, index) {
 					var jointMesh = new THREE.Mesh(new THREE.SphereGeometry(1.5,40,40), jointmaterial2);
-					jointMesh.bvhIndex = index;
+					jointMesh.bvhIndex = joint.jointIndex;
 
 					var a,b,c;
 
 					if (!joint.isEndSite()) {
-					a = joint.channelNames[joint.channelNames.length - 3][0];
-					b = joint.channelNames[joint.channelNames.length - 2][0];
-					c = joint.channelNames[joint.channelNames.length - 1][0];
-
-				}
+						a = joint.channelNames[joint.channelNames.length - 3][0];
+						b = joint.channelNames[joint.channelNames.length - 2][0];
+						c = joint.channelNames[joint.channelNames.length - 1][0];
+					}
 
 					jointMesh.rotOrder = a+b+c;
-					console.log(a+b+c);
-
+					// console.log(a+b+c);
+					
 					jointMeshes.push(jointMesh);
+
 					scene.add(jointMesh);
 				});
+				}
 				
 				bvh.connectivityMatrix.forEach(function(bb, index) {
 					st = new THREE.Vector3().fromArray(bb[0].positions[0]);
@@ -95,9 +100,37 @@
 					boneMeshes.push(boneMesh);
 					scene.add(boneMesh);
 				});
+
 				
 			});
 		}
+
+		function buildSkel(joint, parent) {
+			var jointMesh = new THREE.Mesh(new THREE.SphereGeometry(1.5,40,40), jointmaterial2);
+			jointMesh.bvhIndex = joint.jointIndex;
+
+			var a,b,c;
+
+			if (!joint.isEndSite()) {
+				a = joint.channelNames[joint.channelNames.length - 3][0];
+				b = joint.channelNames[joint.channelNames.length - 2][0];
+				c = joint.channelNames[joint.channelNames.length - 1][0];
+			}
+
+			jointMesh.rotOrder = a+b+c;
+			 
+			jointMesh.jointparent = parent;
+
+			jointMeshes.push(jointMesh);
+			scene.add(jointMesh);
+
+			joint.children.forEach(function (child) {
+				jointMesh.add(buildSkel(child, jointMesh));
+			});
+
+			return jointMesh;
+		}
+
 
 		function angle_trunc(a) {
 			while (a < 0)
@@ -109,10 +142,71 @@
 
 		function animFrame(frame) {
 			jointMeshes.forEach(function(joint, index) {
+				var bj = bvh.jointArray[joint.bvhIndex];
+
+				
+				var offsetVec = new THREE.Vector3(bj.offset[0],bj.offset[1],bj.offset[1]);
+
+
+				var thisEuler = new THREE.Euler(
+				bj.channels[frame][bj.rotationIndex.x]* Math.PI / 180,
+				bj.channels[frame][bj.rotationIndex.y]* Math.PI / 180,
+				bj.channels[frame][bj.rotationIndex.z]* Math.PI / 180);
+
+
+				joint.localRotMat = new THREE.Matrix4();
+				joint.localRotMat.makeRotationFromEuler(thisEuler);
+
+
+				if (joint.jointparent != 0) {
+					// var t = (new THREE.Matrix4()).multiplyMatrices(offsetMat,joint.jointparent.worldRotMat);
+					// var v = new THREE.Vector3(t.elements[12],t.elements[13],t.elements[14]);
+
+					var t = offsetVec.clone();
+					//t.applyMatrix4(joint.jointparent.worldRotMat);
+//					t.add(joint.jointparent.position);
+					joint.position.set(t.x, t.y, t.z);
+
+					// joint.worldRotMat = new THREE.Matrix4();
+					// joint.worldRotMat.multiplyMatrices(joint.localRotMat,joint.jointparent.worldRotMat);
+
+					joint.worldRotMat = joint.localRotMat.clone();
+					joint.rotation.setFromRotationMatrix(joint.worldRotMat);
+				} 
+				else {
+					joint.position.set(
+					bj.positions[frame][0],
+					bj.positions[frame][1],
+					bj.positions[frame][2]);
+
+					joint.rotation.setFromRotationMatrix(joint.localRotMat);
+					joint.worldRotMat = joint.localRotMat.clone();
+				}
+				
+
+			});
+
+			boneMeshes.forEach(function(bone, index) {
+				firstJointMesh = jointMeshes[bone.joint1Index];
+				firstJoint = bvh.jointArray[bone.joint1Index];
+
+
+				bone.rotation.setFromRotationMatrix(firstJointMesh.worldRotMat);
+				
+				bone.position.set(firstJoint.positions[frame][0],
+								  firstJoint.positions[frame][1],
+								  firstJoint.positions[frame][2]);
+
+
+			});
+		}
+
+		function animFrame0(frame) {
+			jointMeshes.forEach(function(joint, index) {
 				joint.position.set(
-					bvh.jointArray[index].positions[frame][0],
-					bvh.jointArray[index].positions[frame][1],
-					bvh.jointArray[index].positions[frame][2]);
+					bvh.jointArray[joint.bvhIndex].positions[frame][0],
+					bvh.jointArray[joint.bvhIndex].positions[frame][1],
+					bvh.jointArray[joint.bvhIndex].positions[frame][2]);
 			});
 
 			boneMeshes.forEach(function(bone, index) {
@@ -131,29 +225,34 @@
 				rotMat.set(R[0][0],R[1][0],R[2][0],0,
 						   R[0][1],R[1][1],R[2][1],0,
 						   R[0][2],R[1][2],R[2][2],0,
-							0	  ,0      ,0      ,1);
+							0	  ,0      ,0      ,0);
 
 
 				// rotMat.set(R[0][0],R[0][1],R[0][2],0,
-				// 		      R[1][0],R[1][1],R[1][2],0,
-				// 		      R[2][0],R[2][1],R[2][2],0,
+				// 		   R[1][0],R[1][1],R[1][2],0,
+				// 		   R[2][0],R[2][1],R[2][2],0,
 				// 			0	  ,0      ,0      ,1);				
 
 
+				//bone.rotation.setFromRotationMatrix(rotMat, "ZXY");
 
-				bone.rotation.setFromRotationMatrix(rotMat, firstJoint.rotOrder);
+
+
+				var thisEuler = new THREE.Euler(
+					firstJoint.channels[frame][firstJoint.rotationIndex.x]* Math.PI / 180,
+					firstJoint.channels[frame][firstJoint.rotationIndex.y]* Math.PI / 180,
+					firstJoint.channels[frame][firstJoint.rotationIndex.z]* Math.PI / 180);
+
+				var thisLocalRotMat = new THREE.Matrix4();
+				thisLocalRotMat.makeRotationFromEuler(thisEuler);
+
+				bone.rotation.setFromRotationMatrix(thisLocalRotMat);
 				
-
-
+				//bone.rotation.set(thisEuler.x, thisEuler.y, thisEuler.z);
 
 				bone.position.set(firstJoint.positions[frame][0],
-								firstJoint.positions[frame][1],
-								firstJoint.positions[frame][2]);
-
-
-				//bone.applyMatrix(offsetMat.multiply(rotMat));
-				/// 4x4 
-
+								  firstJoint.positions[frame][1],
+								  firstJoint.positions[frame][2]);
 
 				/// move origin (.translate)
 				/// rotate
@@ -162,81 +261,7 @@
 			});
 		}
 
-		function animFrame0(frame) {
-			jointMeshes.forEach(function(joint, index) {
-				joint.position.set(
-					bvh.jointArray[index].positions[frame][0],
-					bvh.jointArray[index].positions[frame][1],
-					bvh.jointArray[index].positions[frame][2]);
-			});
 
-			boneMeshes.forEach(function(bone, index) {
-				firstJoint = bvh.jointArray[bone.joint1Index];
-				secondJoint = bvh.jointArray[bone.joint2Index];
-
-				dx = secondJoint.positions[frame][0]-firstJoint.positions[frame][0];
-				dy = secondJoint.positions[frame][1]-firstJoint.positions[frame][1];
-				dz = secondJoint.positions[frame][2]-firstJoint.positions[frame][2];
-
-			var appr = 3;
-				if (appr == 1) {				
-				theta_z = angle_trunc(math.atan2(dx,dy));
-				theta_y = angle_trunc(math.atan2(dz,dx));
-				theta_x = angle_trunc(math.atan2(dy,dz));
-
-				bone.rotation.set(theta_x,theta_y,theta_z);
-			}
-			else if (appr == 2) {
-				theta_z = angle_trunc(math.atan2(secondJoint.positions[frame][0],secondJoint.positions[frame][1]) - math.atan2(firstJoint.positions[frame][0],firstJoint.positions[frame][1]));
-
-				theta_y = angle_trunc(math.atan2(secondJoint.positions[frame][0],secondJoint.positions[frame][2]) - math.atan2(firstJoint.positions[frame][0],firstJoint.positions[frame][2]));
-
-				theta_x = angle_trunc(math.atan2(secondJoint.positions[frame][2],secondJoint.positions[frame][1]) - math.atan2(firstJoint.positions[frame][2],firstJoint.positions[frame][1]));
-
-				bone.rotation.set(theta_x,theta_y,theta_z);
-			} else if (appr == 3) {
-				theta_x = firstJoint.channels[frame][firstJoint.channels[frame].length - 3]* Math.PI / 180;
-				theta_y = firstJoint.channels[frame][firstJoint.channels[frame].length - 2]* Math.PI / 180;
-				theta_z = firstJoint.channels[frame][firstJoint.channels[frame].length - 1]* Math.PI / 180;
-
-				bone.rotation.set(theta_x,theta_y,theta_z,firstJoint.rotOrder);
-			}
-				//console.log(theta_y);
-				
-				// bone.lookAt(new THREE.Vector3(
-				// 	firstJoint.positions[frame][0],
-				// 	firstJoint.positions[frame][1],
-				// 	firstJoint.positions[frame][2]));
-				//bone.rotation.z = 0;
-
-
-
-				bone.position.set(firstJoint.positions[frame][0]+dx/2,
-								firstJoint.positions[frame][1]+dy/2,
-								firstJoint.positions[frame][2])+dz/2;
-
-				/// 4x4 
-
-
-				/// move origin (.translate)
-				/// rotate
-				/// translate (world position + offeset)
-
-			});
-
-			boneLines.forEach(function(bone, index) {
-				firstJoint = bvh.jointArray[bone.joint1Index];
-				secondJoint = bvh.jointArray[bone.joint2Index];
-				bone.geometry.vertices = [new THREE.Vector3().fromArray(firstJoint.positions[frame]),
-							new THREE.Vector3().fromArray(secondJoint.positions[frame])];
-						});
-		}
-
-		function matrixMultiply(m1, m2) {
-			var a = math.matrix(m1);
-			var b = math.matrix(m2);
-			return math.multiply(a, b).toArray();
-		}
 		
 		$(document).on("keypress", function (e) {
     		if (e.charCode == 32)
@@ -251,26 +276,11 @@
 		<script>
 		var scene, camera, renderer;
 		var geometry, material, mesh;
-		var onProgress = function ( xhr ) {
-			if ( xhr.lengthComputable ) {
-				var percentComplete = xhr.loaded / xhr.total * 100;
-				console.log( Math.round(percentComplete, 2) + '% downloaded' );
-			}
-		};
-
-		var onError = function ( xhr ) {
-		
-		};
 		
 		init();
 		animate();
 
-		function init() {
-			scene = new THREE.Scene();
-			camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
-			camera.position.set( 20, 80, 3 );
-			camera.position.z = 300;
-
+		function set_the_scene() {
 			// Lights
 			var lights = [];
 			lights[0] = new THREE.PointLight( 0xffffff, 1, 0 );
@@ -288,7 +298,7 @@
 			scene.add( ambientLight );
 
 			// Grid
-			var size = 160, step = 20;
+			var size = 170, step = 20;
 
 			var geometry = new THREE.PlaneGeometry( size*2, size*2);
 			var material = new THREE.MeshBasicMaterial( {color: 0x707070, side: THREE.DoubleSide, transparent: true, opacity: 0.7} );
@@ -308,9 +318,16 @@
 
 			var line = new THREE.LineSegments( geometry, material );
 			scene.add( line );
+		}
 
+		function init() {
+			scene = new THREE.Scene();
+			camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
+			camera.position.set( 20, 80, 3 );
+			camera.position.z = 300;
+
+			set_the_scene();
 			
-
 			load_bvh();
 
 			renderer = new THREE.WebGLRenderer();
@@ -324,23 +341,21 @@
 
 		function animate() {
 			requestAnimationFrame( animate );
-			if (typeof bvh !== 'undefined'){		
+			
+			if (1 && typeof bvh !== 'undefined'){		
+				if (playing) {
+					animIndex = animOffset + Math.floor( (Date.now() - animStartTimeRef) / bvh.frameTime / 1000);
 
-			if (playing) {
-				animIndex = animOffset + Math.floor( (Date.now() - animStartTimeRef) / bvh.frameTime / 1000);
-
-				if (animIndex >= bvh.frameCount) {
-					animOffset = 0;
-					animStartTimeRef = Date.now();
-					animIndex = 0;
+					if (animIndex >= bvh.frameCount) {
+						animOffset = 0;
+						animStartTimeRef = Date.now();
+						animIndex = 0;
+					}
+					animFrame(animIndex);
 				}
+				
 
 			}
-			
-			animFrame(animIndex);
-
-			}
-			
 			renderer.render( scene, camera );
 		}
 		</script>

@@ -243,18 +243,18 @@ BVHReader.BVH.Skeleton = function (root, map, arr, connectivityMatrix, frameCoun
             zangle= deg2rad(channel[joint.rotationIndex.z] || 0);
 
             // var rotMatrix = math.transpose(getRotationMatrix(xangle, yangle, zangle, "xyz"));
-            var rotMatrix = getRotationMatrix1(xangle, yangle, zangle, "xyz"); //this also works
+            // var rotMatrix = getRotationMatrix1(xangle, yangle, zangle, "xyz"); //this also works
             var posMatrix = [xpos, ypos, zpos];
 
             if(joint.parent){
             	  posMatrix = [0,0,0];  //At least for the bvhs that we have, this should be set to 0
 
-                var t = vectorAdd(joint.offset, posMatrix);
-                var u = matrixMultiply(t, joint.parent.rotations[i]);
+                // var t = vectorAdd(joint.offset, posMatrix);
+                // var u = matrixMultiply(t, joint.parent.rotations[i]);
 
-                joint.positions[i] = vectorAdd(u, joint.parent.positions[i]);
-                joint.rotations[i] = matrixMultiply( rotMatrix, joint.parent.rotations[i]);
-                joint.rotmat[i] = rotMatrix; 
+                // joint.positions[i] = vectorAdd(u, joint.parent.positions[i]);
+                // joint.rotations[i] = matrixMultiply( rotMatrix, joint.parent.rotations[i]);
+                // joint.rotmat[i] = rotMatrix; 
 
                  if (i==0 && (joint.name ==  "Spine" || joint.name == "L_Femur")) {
                     /*console.log("head's rot mat: ");
@@ -269,8 +269,8 @@ BVHReader.BVH.Skeleton = function (root, map, arr, connectivityMatrix, frameCoun
 
             }else{
                 //its the root
-                joint.rotations[i] = rotMatrix;
-                joint.rotmat[i] = rotMatrix;
+                // joint.rotations[i] = rotMatrix;
+                // joint.rotmat[i] = rotMatrix;
                 joint.positions[i] = posMatrix;//vectorAdd(joint.offset , posMatrix);
                 // ^ we can safely ignore the root's offset
             }

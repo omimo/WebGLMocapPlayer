@@ -24,30 +24,34 @@
 		<script type="text/javascript">
 		var jointMeshes = [];
 		var boneMeshes = [];
-		var boneLines = [];
+		var rootMeshes = [];
 		var animIndex = 1;
 
 		var animStartTimeRef = [];
 		var animOffset = 0;
 		var playing = false;
 
-		 var bvhFileName = "res/AV_8Walk_Meredith_HVHA_Rep1.bvh";
+		var skelScale = 2;
+
+		 // var bvhFileName = "res/AV_8Walk_Meredith_HVHA_Rep1.bvh";
 		// var bvhFileName = "res/35_01.bvh";
-		//var bvhFileName = "res/10_HVHA_8_walk_meredith1.bvh";
+		// var bvhFileName = "res/05_07.bvh";
+		var bvhFileName = "res/38_03.bvh";
+		// var bvhFileName = "res/10_HVHA_8_walk_meredith1.bvh";
 		// var bvhFileName = "res/GEMMA_DANCE_TRACK1_0002.bvh";
 
 		function load_bvh() {
 			jointmaterial = new THREE.MeshBasicMaterial( { color: 0x0066ff, wireframe: true } );
 			jointmaterial2 = new THREE.MeshPhongMaterial({
-					color: 0x156289,
-					emissive: 0x072534,
+					color: 0x1562a2,
+					emissive: 0x072554,
 					side: THREE.DoubleSide,
 					shading: THREE.FlatShading
 				});
 			bonematerial = new THREE.MeshBasicMaterial( { color: 0x00ff66, wireframe: true } );
 			bonematerial2 = new THREE.MeshPhongMaterial({
-					color: 0x221133,
-					emissive: 0x276734,
+					color: 0x552211,
+					emissive: 0x551111,
 					side: THREE.DoubleSide,
 					shading: THREE.FlatShading
 				});
@@ -60,75 +64,72 @@
 				bvh = data;
 				console.log("BVH file loaded.");
 
-				if (1) {
-					buildSkel(bvh.getSkeleton(),0);
-				}
-				else {
-					bvh.jointArray.forEach(function(joint, index) {
-					var jointMesh = new THREE.Mesh(new THREE.SphereGeometry(1.5,40,40), jointmaterial2);
-					jointMesh.bvhIndex = joint.jointIndex;
+				buildSkelJoints(bvh.getSkeleton(),0);
 
-					var a,b,c;
-
-					if (!joint.isEndSite()) {
-						a = joint.channelNames[joint.channelNames.length - 3][0];
-						b = joint.channelNames[joint.channelNames.length - 2][0];
-						c = joint.channelNames[joint.channelNames.length - 1][0];
-					}
-
-					jointMesh.rotOrder = a+b+c;
-					// console.log(a+b+c);
-					
-					jointMeshes.push(jointMesh);
-
-					scene.add(jointMesh);
-				});
-				}
-				
-				bvh.connectivityMatrix.forEach(function(bb, index) {
-					st = new THREE.Vector3().fromArray(bb[0].positions[0]);
-					en = new THREE.Vector3().fromArray(bb[1].positions[0]);
-					var h = st.distanceTo(en);
-					var bgeometry = new THREE.CylinderGeometry(1,1,h,20);
-
-					bgeometry.translate(0, -h/2, 0 );
-
-					var boneMesh = new THREE.Mesh(bgeometry, bonematerial2);
-					boneMesh.joint1Index = bb[0].jointIndex;
-					boneMesh.joint2Index = bb[1].jointIndex;
-
-					boneMeshes.push(boneMesh);
-					scene.add(boneMesh);
+				// rootMesh = new THREE.Mesh(new THREE.SphereGeometry(1,1,1), bonematerial2);
+				// rootMesh.joint = jointMeshes[0];
+				// rootMesh.name = "root";
+				// boneMeshes.push(rootMesh);
+				(buildSkelBones(jointMeshes[0])).forEach(function (c){
+					//rootMesh.add(c);
+					rootMeshes.push(c);
+					scene.add(c);
 				});
 
+				scene.add(jointMeshes[0]);
 				
+				//scene.add(boneMeshes[25]);
 			});
 		}
 
-		function buildSkel(joint, parent) {
+		function buildSkelJoints(joint, parent) {
 			var jointMesh = new THREE.Mesh(new THREE.SphereGeometry(1.5,40,40), jointmaterial2);
 			jointMesh.bvhIndex = joint.jointIndex;
-
-			var a,b,c;
-
-			if (!joint.isEndSite()) {
-				a = joint.channelNames[joint.channelNames.length - 3][0];
-				b = joint.channelNames[joint.channelNames.length - 2][0];
-				c = joint.channelNames[joint.channelNames.length - 1][0];
-			}
-
-			jointMesh.rotOrder = a+b+c;
-			 
+			jointMesh.name = joint.name;
 			jointMesh.jointparent = parent;
-
 			jointMeshes.push(jointMesh);
-			scene.add(jointMesh);
-
 			joint.children.forEach(function (child) {
-				jointMesh.add(buildSkel(child, jointMesh));
+				jointMesh.add(buildSkelJoints(child, jointMesh));
 			});
 
 			return jointMesh;
+		}
+
+		function buildSkelBones(jointMesh) {
+		var bones = [];
+		jointMesh.children.forEach(function (childMesh) {
+			if (typeof childMesh.bvhIndex !== "undefined"){
+				var bj = bvh.jointArray[childMesh.bvhIndex];
+				var offsetVec = new THREE.Vector3(bj.offset[0],bj.offset[1],bj.offset[2]);
+				h = offsetVec.length();
+				var bgeometry = new THREE.CylinderGeometry(1,1,h,20);
+				
+				if (offsetVec.x == 0)
+					bgeometry.rotateX(math.pi/2);
+				//if (offsetVec.y != 0)
+					bgeometry.rotateY(math.pi/2);
+				//if (offsetVec.z == 0)
+					bgeometry.rotateZ(math.pi/2);	
+
+				bgeometry.translate(offsetVec.x/2, offsetVec.y/2, offsetVec.z/2 );
+
+				
+				var boneMesh = new THREE.Mesh(bgeometry, bonematerial2);	
+				boneMesh.joint = jointMesh;
+				boneMesh.name = jointMesh.name + " > " + childMesh.name;
+				boneMeshes.push(boneMesh);
+				// scene.add(boneMesh);
+				bones.push(boneMesh);		
+
+				boneMesh.scale.set(skelScale,skelScale,skelScale);
+				(buildSkelBones(childMesh)).forEach(function (b) {
+					boneMesh.add(b);
+				});				
+			}
+		});	
+
+		return bones;		
+			
 		}
 
 
@@ -141,125 +142,80 @@
 		}
 
 		function animFrame(frame) {
-			jointMeshes.forEach(function(joint, index) {
-				var bj = bvh.jointArray[joint.bvhIndex];
 
-				
-				var offsetVec = new THREE.Vector3(bj.offset[0],bj.offset[1],bj.offset[1]);
+			jointMeshes[0].traverse(function (joint) {
+				if (typeof joint.bvhIndex !== "undefined"){
 
+					var bj = bvh.jointArray[joint.bvhIndex];
 
-				var thisEuler = new THREE.Euler(
-				bj.channels[frame][bj.rotationIndex.x]* Math.PI / 180,
-				bj.channels[frame][bj.rotationIndex.y]* Math.PI / 180,
-				bj.channels[frame][bj.rotationIndex.z]* Math.PI / 180);
+					var offsetVec = new THREE.Vector3(bj.offset[0],bj.offset[1],bj.offset[2]);
 
-
-				joint.localRotMat = new THREE.Matrix4();
-				joint.localRotMat.makeRotationFromEuler(thisEuler);
+					var thisEuler = new THREE.Euler(
+						(bj.channels[frame][bj.rotationIndex.x]* Math.PI / 180),
+						(bj.channels[frame][bj.rotationIndex.y]* Math.PI / 180),
+						(bj.channels[frame][bj.rotationIndex.z]* Math.PI / 180));
 
 
-				if (joint.jointparent != 0) {
-					// var t = (new THREE.Matrix4()).multiplyMatrices(offsetMat,joint.jointparent.worldRotMat);
-					// var v = new THREE.Vector3(t.elements[12],t.elements[13],t.elements[14]);
+					joint.localRotMat = new THREE.Matrix4();
+					joint.localRotMat.makeRotationFromEuler(thisEuler);
 
-					var t = offsetVec.clone();
-					//t.applyMatrix4(joint.jointparent.worldRotMat);
-//					t.add(joint.jointparent.position);
-					joint.position.set(t.x, t.y, t.z);
+					if (joint.jointparent != 0) {					
 
-					// joint.worldRotMat = new THREE.Matrix4();
-					// joint.worldRotMat.multiplyMatrices(joint.localRotMat,joint.jointparent.worldRotMat);
+						joint.worldRotMat = new THREE.Matrix4();
+						joint.worldRotMat.multiplyMatrices(joint.jointparent.worldRotMat,joint.localRotMat);
 
-					joint.worldRotMat = joint.localRotMat.clone();
-					joint.rotation.setFromRotationMatrix(joint.worldRotMat);
-				} 
-				else {
-					joint.position.set(
-					bj.positions[frame][0],
-					bj.positions[frame][1],
-					bj.positions[frame][2]);
+						joint.rotation.setFromRotationMatrix(joint.localRotMat);
 
-					joint.rotation.setFromRotationMatrix(joint.localRotMat);
-					joint.worldRotMat = joint.localRotMat.clone();
+						joint.position.set(offsetVec.x, offsetVec.y, offsetVec.z);
+					} 
+					else {
+						joint.rotation.setFromRotationMatrix(joint.localRotMat);
+						joint.worldRotMat = joint.localRotMat.clone();
+
+						joint.position.set(
+							bj.positions[frame][0],
+							bj.positions[frame][1],
+							bj.positions[frame][2]);
+					}
+			}
+			else { //Bones
+				joint.rotation.copy(joint.parent.rotation);//setFromRotationMatrix(joint.parent.localRotMat);
+				joint.position.copy(joint.parent.position);
+				console.log();
+			}
+			});
+
+			// boneMeshes[0].traverse(function (bone) { 
+			// 	if (frame == 2) console.log(bone.joint.name);
+			// 	bone.rotation.setFromRotationMatrix(bone.joint.localRotMat);
+			// 	bone.position.copy(bone.joint.position);
+			// });
+
+			rootMeshes.forEach(function(rootMesh) {
+				rootMesh.traverse(function(bone,index) {
+				var bj = bvh.jointArray[bone.joint.bvhIndex];
+
+				var offsetVec = new THREE.Vector3(bj.offset[0],bj.offset[1],bj.offset[2]);
+
+				if ( bone.parent.type === "Scene")  
+				{
+					bone.position.set(bj.positions[frame][0],
+								  bj.positions[frame][1],
+								  bj.positions[frame][2]);
+				} else {
+					bone.position.set(offsetVec.x,
+									offsetVec.y,
+									offsetVec.z);
 				}
 				
+				bone.rotation.copy(bone.joint.rotation);//setFromRotationMatrix(bone.joint.localRotMat);				
 
 			});
-
-			boneMeshes.forEach(function(bone, index) {
-				firstJointMesh = jointMeshes[bone.joint1Index];
-				firstJoint = bvh.jointArray[bone.joint1Index];
-
-
-				bone.rotation.setFromRotationMatrix(firstJointMesh.worldRotMat);
-				
-				bone.position.set(firstJoint.positions[frame][0],
-								  firstJoint.positions[frame][1],
-								  firstJoint.positions[frame][2]);
-
-
 			});
+			
 		}
 
-		function animFrame0(frame) {
-			jointMeshes.forEach(function(joint, index) {
-				joint.position.set(
-					bvh.jointArray[joint.bvhIndex].positions[frame][0],
-					bvh.jointArray[joint.bvhIndex].positions[frame][1],
-					bvh.jointArray[joint.bvhIndex].positions[frame][2]);
-			});
 
-			boneMeshes.forEach(function(bone, index) {
-				firstJoint = bvh.jointArray[bone.joint1Index];
-				secondJoint = bvh.jointArray[bone.joint2Index];
-
-				var offsetMat = new THREE.Matrix4();
-				offsetMat.set(1,0,0,firstJoint.offset[0],
-							  0,1,0,firstJoint.offset[1],
-							  0,0,1,firstJoint.offset[2],
-							  0,0,0,1);
-
-				
-				var rotMat = new THREE.Matrix4();
-				var R = firstJoint.rotations[frame];
-				rotMat.set(R[0][0],R[1][0],R[2][0],0,
-						   R[0][1],R[1][1],R[2][1],0,
-						   R[0][2],R[1][2],R[2][2],0,
-							0	  ,0      ,0      ,0);
-
-
-				// rotMat.set(R[0][0],R[0][1],R[0][2],0,
-				// 		   R[1][0],R[1][1],R[1][2],0,
-				// 		   R[2][0],R[2][1],R[2][2],0,
-				// 			0	  ,0      ,0      ,1);				
-
-
-				//bone.rotation.setFromRotationMatrix(rotMat, "ZXY");
-
-
-
-				var thisEuler = new THREE.Euler(
-					firstJoint.channels[frame][firstJoint.rotationIndex.x]* Math.PI / 180,
-					firstJoint.channels[frame][firstJoint.rotationIndex.y]* Math.PI / 180,
-					firstJoint.channels[frame][firstJoint.rotationIndex.z]* Math.PI / 180);
-
-				var thisLocalRotMat = new THREE.Matrix4();
-				thisLocalRotMat.makeRotationFromEuler(thisEuler);
-
-				bone.rotation.setFromRotationMatrix(thisLocalRotMat);
-				
-				//bone.rotation.set(thisEuler.x, thisEuler.y, thisEuler.z);
-
-				bone.position.set(firstJoint.positions[frame][0],
-								  firstJoint.positions[frame][1],
-								  firstJoint.positions[frame][2]);
-
-				/// move origin (.translate)
-				/// rotate
-				/// translate (world position + offeset)
-
-			});
-		}
 
 
 		
@@ -278,6 +234,7 @@
 		var geometry, material, mesh;
 		
 		init();
+
 		animate();
 
 		function set_the_scene() {

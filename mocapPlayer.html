@@ -33,19 +33,19 @@
 
 		var skelScale = 2;
 
-		 var bvhFileName = "res/AV_8Walk_Meredith_HVHA_Rep1.bvh";
+		 var bvhFileName = "res/AV_8Walk_Meredith_HVHA_Rep1.bvh";skelScale = 1;
 		// var bvhFileName = "res/35_01.bvh";
 		// var bvhFileName = "res/05_07.bvh";
-		var bvhFileName = "res/38_03.bvh";
-		// var bvhFileName = "res/10_HVHA_8_walk_meredith1.bvh";
-		// var bvhFileName = "res/GEMMA_DANCE_TRACK1_0002.bvh";
+		// var bvhFileName = "res/38_03.bvh";skelScale = 3;
+		var bvhFileName = "res/10_HVHA_8_walk_meredith1.bvh";skelScale = 1;
+		// var bvhFileName = "res/GEMMA_DANCE_TRACK1_0002.bvh";skelScale = 1;
 
 		function load_bvh() {
 			jointmaterial = new THREE.MeshBasicMaterial( { color: 0x0066ff, wireframe: true } );
 			jointmaterial2 = new THREE.MeshPhongMaterial({
 					color: 0x1562a2,
 					emissive: 0x072554,
-					color: 0x302221,
+					//color: 0x302221,
 					emissive: 0x501111,
 					side: THREE.DoubleSide,
 					shading: THREE.FlatShading
@@ -68,24 +68,25 @@
 
 				buildSkelJoints(bvh.getSkeleton(),0);
 
-				// rootMesh = new THREE.Mesh(new THREE.SphereGeometry(1,1,1), bonematerial2);
-				// rootMesh.joint = jointMeshes[0];
-				// rootMesh.name = "root";
-				// boneMeshes.push(rootMesh);
 				(buildSkelBones(jointMeshes[0])).forEach(function (c){
 					rootMeshes.push(c);
 					scene.add(c);
-					//c.scale.set(1,skelScale,1);
-				});
-
+				});				
 				scene.add(jointMeshes[0]);
-				
-				//scene.add(boneMeshes[25]);
+				changeSkeletonScale(skelScale);
 			});
 		}
 
+		function changeSkeletonScale(s) {
+			rootMeshes.forEach(function (c) {
+				c.scale.set(s,s,s);
+			});
+			jointMeshes[0].scale.set(s,s,s);
+			jointMeshes[0].position.multiplyScalar(s);
+		}
+
 		function buildSkelJoints(joint, parent) {
-			var jointMesh = new THREE.Mesh(new THREE.SphereGeometry(1,60,60), jointmaterial2);
+			var jointMesh = new THREE.Mesh(new THREE.SphereGeometry(2/skelScale,60,60), jointmaterial2);
 			jointMesh.bvhIndex = joint.jointIndex;
 			jointMesh.offsetVec = new THREE.Vector3(joint.offset[0],joint.offset[1],joint.offset[2]);
 			jointMesh.name = joint.name;
@@ -111,17 +112,65 @@
 		jointMesh.children.forEach(function (childMesh) {
 			// if (typeof childMesh.bvhIndex !== "undefined")
 			{
+				// move origin (.translate)
+				// rotate
+				// translate (offset + position)
 				h = math.abs(childMesh.offsetVec.length());
-				var bgeometry = new THREE.CylinderGeometry(1.5,0.7,h,40);
+				var bgeometry = new THREE.CylinderGeometry(1.5/skelScale,0.7/skelScale,h,40);
 				
-				if (childMesh.offsetVec.x == 0)
-					bgeometry.rotateX(math.pi/2);
-				// if (childMesh.offsetVec.y != 0)
-					bgeometry.rotateY(math.pi/2);
-				// if (childMesh.offsetVec.z != 0)
-					bgeometry.rotateZ(math.pi/2);	
+				
+				// bgeometry.translate(0, childMesh.offsetVec.y/2, 0 );
+				
+				// bgeometry.rotateZ(-childMesh.offsetVec.z/2);
+				// bgeometry.rotateY(-childMesh.offsetVec.y/2);
+				// bgeometry.rotateX(-childMesh.offsetVec.x/2);
+
+ 			// 	if (childMesh.offsetVec.x < 0) {
+				// 	bgeometry.rotateZ(math.pi/3);
+				// 	bgeometry.rotateY(math.pi/3);
+ 			// 	}
+				// else if (childMesh.offsetVec.x > 0){
+				// 	bgeometry.rotateZ(-math.pi/3);
+				// 	bgeometry.rotateY(-math.pi/3);
+				// }
+
+				// if (childMesh.offsetVec.z < 0){
+				// 	bgeometry.rotateX(math.pi/3);
+				// 	bgeometry.rotateY(math.pi/3);
+				// }
+				// else if (childMesh.offsetVec.z > 0){
+				// 	bgeometry.rotateX(-math.pi/3);
+				// 	bgeometry.rotateY(-math.pi/3);
+				// }
+
+				// if (childMesh.offsetVec.y < 0){
+				// 	bgeometry.rotateX(math.pi/3);
+				// 	bgeometry.rotateZ(math.pi/3);
+				// }
+				// else if (childMesh.offsetVec.y > 0){
+				// 	bgeometry.rotateX(-math.pi/3);
+				// 	bgeometry.rotateZ(-math.pi/3);
+				// }
+
+
+				// bgeometry.translate(childMesh.offsetVec.x/2, childMesh.offsetVec.y/2, childMesh.offsetVec.z/2 );
+
+
+//Begin - Working for MS				
+			    if (childMesh.offsetVec.x < 0)
+					bgeometry.rotateZ(3*math.pi/2);
+				else if (childMesh.offsetVec.x > 0)
+					bgeometry.rotateZ(-3*math.pi/2);
+
+				if (childMesh.offsetVec.z < 0)
+					bgeometry.rotateX(3*math.pi/2);
+				else if (childMesh.offsetVec.z > 0)
+					bgeometry.rotateX(-3*math.pi/2);
 
 				bgeometry.translate(childMesh.offsetVec.x/2, childMesh.offsetVec.y/2, childMesh.offsetVec.z/2 );
+
+//END - Working for MS
+
 
 				var boneMesh = new THREE.Mesh(bgeometry, bonematerial2);	
 				boneMesh.joint = jointMesh;
@@ -187,9 +236,9 @@
 					joint.worldRotMat = joint.localRotMat.clone();
 
 					joint.position.set(
-						bj.positions[frame][0],
-						bj.positions[frame][1],
-						bj.positions[frame][2]);
+						bj.positions[frame][0] * skelScale,
+						bj.positions[frame][1] * skelScale,
+						bj.positions[frame][2] * skelScale);
 				}
 			});
 
@@ -204,19 +253,19 @@
 				var bj = bvh.jointArray[bone.joint.bvhIndex];
 
 				var offsetVec = new THREE.Vector3(bj.offset[0],bj.offset[1],bj.offset[2]);
+				
+				bone.rotation.copy(bone.joint.rotation);//setFromRotationMatrix(bone.joint.localRotMat);				
 
 				if ( bone.parent.type === "Scene")  
 				{
-					bone.position.set(bj.positions[frame][0],
-								  bj.positions[frame][1],
-								  bj.positions[frame][2]);
+					bone.position.set(bj.positions[frame][0] * skelScale,
+								  bj.positions[frame][1] * skelScale,
+								  bj.positions[frame][2] * skelScale);
 				} else {
 					bone.position.set(offsetVec.x,
 									offsetVec.y,
 									offsetVec.z);
 				}
-				
-				bone.rotation.copy(bone.joint.rotation);//setFromRotationMatrix(bone.joint.localRotMat);				
 
 			});
 			});
@@ -291,6 +340,9 @@
 			scene.add(camera);
 			set_the_scene();
 			
+			axes = new THREE.AxisHelper( 50 );
+			scene.add( axes );
+
 			load_bvh();
 
 			renderer = new THREE.WebGLRenderer();

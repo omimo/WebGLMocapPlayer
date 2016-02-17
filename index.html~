@@ -29,7 +29,7 @@
 
 		var animStartTimeRef = [];
 		var animOffset = 0;
-		var playing = false;
+		var playing = true;
 
 		var skelScale = 2;
 
@@ -40,7 +40,7 @@
 		// var bvhFileName = "res/05_07.bvh";
 		// var bvhFileName = "res/38_03.bvh";skelScale = 3;
 		// var bvhFileName = "res/10_HVHA_8_walk_meredith1.bvh";skelScale = 1;
-		var bvhFileName = "res/GEMMA_DANCE_TRACK1_0002.bvh";skelScale = 1;
+		//var bvhFileName = "res/GEMMA_DANCE_TRACK1_0002.bvh";skelScale = 1;
 
 		jointmaterial = new THREE.MeshBasicMaterial( { color: 0x0066ff, wireframe: true } );
 		jointmaterial2 = new THREE.MeshPhongMaterial({
@@ -362,8 +362,8 @@
 			scene.add(camera);
 			set_the_scene();
 			
-			axes = new THREE.AxisHelper( 50 );
-			scene.add( axes );
+			//axes = new THREE.AxisHelper( 50 );
+			//scene.add( axes );
 
 			load_bvh();
 

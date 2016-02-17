@@ -1,6 +1,6 @@
 // By Ankit
-var BVHReader = function () {
-
+var BVHReader = function (hashhhhhh) {
+    this._hash = hashhhhhh;
     this.load = function (url, callback) {
         $.get(url, function (str) {
             var dataReturn = parse(str);

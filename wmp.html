@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+<!-- WebGl Mocap Player - V 0.2 
+By Omid Alemi
+ -->
 <html lang="en">
 	<head>
 		<title>WebGL Mocap Viewer</title>
@@ -9,8 +12,6 @@
 		</style>
 		<link rel="stylesheet" href="style/pace.css"></link>
 
-		<script src="js/bvhReader.js"></script>
-		<script src="js/character.js"></script>
 		<script src="bower_components/PACE/pace.min.js"></script>
 		<script src="bower_components/mathjs/dist/math.min.js"></script>
 		<script src="bower_components/jquery/dist/jquery.min.js"></script>
@@ -20,57 +21,18 @@
 		<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
 		<script src="bower_components/three.js/examples/js/loaders/collada/Animation.js"></script>
 		<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+
+		<script src="js/bvhReader.js"></script>
+		<script src="js/character.js"></script>
+		<script src="js/skeletonFactory.js"></script>
 	</head>
 	<body>
 		<script type="text/javascript">
 
 		var characters = [];
-		var playing = false;
-
-		jointmaterial =  new THREE.MeshLambertMaterial({
-				color: 0xa28f18,
-				emissive: 0x072554,
-				//color: 0x302221,
-				emissive: 0x633434,
-				side: THREE.DoubleSide,
-				shading: THREE.FlatShading,
-				wireframe: false
-			});
-
-		bonematerial = new THREE.MeshLambertMaterial({
-				color: 0x95bd76,
-				emissive: 0x2e2e23,
-				side: THREE.DoubleSide,
-				shading: THREE.FlatShading,
-				wireframe: false
-			});
-
-		jointmaterial2 = new THREE.MeshPhongMaterial({
-				color: 0x1562a2,
-				emissive: 0x072554,
-				//color: 0x302221,
-				emissive: 0x501111,
-				side: THREE.DoubleSide,
-				shading: THREE.FlatShading
-			});
-		
-
-		bonematerial2 = new THREE.MeshPhongMaterial({
-				color: 0x552211,
-				emissive: 0x551111,
-				side: THREE.DoubleSide,
-				shading: THREE.FlatShading
-			});
-
-		
+		var playing = true;
 
 
-		
-
-
-
-		
-		
 		$(document).on("keypress", function (e) {
     		if (e.charCode == 32)
     			playing = !playing;
@@ -116,7 +78,7 @@
 			var size = 170, step = 20;
 
 			var geometry = new THREE.PlaneGeometry( size*2, size*2);
-			var material = new THREE.MeshBasicMaterial( {color: 0x707070, side: THREE.DoubleSide, transparent: true, opacity: 0.7} );
+			var material = new THREE.MeshBasicMaterial( {color: 0x909090, side: THREE.DoubleSide, transparent: true, opacity: 0.7} );
 			var plane = new THREE.Mesh( geometry, material );
 			plane.position.set(0,0,0);
 			plane.rotation.set(math.pi/2,0,0);
@@ -141,21 +103,33 @@
 			camera.position.set( 0, 80, 0 );
 			camera.position.z = 350;
 			scene.add(camera);
+
 			set_the_scene();
 			
 			axes = new THREE.AxisHelper( 50 );
-			scene.add( axes );
+			//scene.add( axes );
 
-			//load_bvh();
+			c1 = new wmp.Character("Mamali", jointmaterial2,bonematerial2, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder3);
+			c1.loadFromURL("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function() {c1.animFrame(0);});
 
-			c1 = new wmp.Character("Mamali", jointmaterial2,bonematerial2);
-			c1.loadFromURL("res/AV_8Walk_Meredith_HVHA_Rep1.bvh");
-
-			c2 = new wmp.Character("Gholi", jointmaterial,bonematerial);
+			c2 = new wmp.Character("Gholi", jointmaterial,bonematerial, makeJointGeometry_Dode, makeBoneGeometry_Cylinder2);
+			c2.skelScale = 0.75;
 			c2.loadFromURL("res/GEMMA_DANCE_TRACK1_0002.bvh");
+
+			c3 = new wmp.Character("Vali", jointmaterial,bonematerial3, makeJointGeometry_Dode, makeBoneGeometry_Box1);
+			c3.skelScale = 1;
+			c3.setOriginPosition(100,0,-140);
+			c3.loadFromURL("res/AV_ImprovStatic_Meredith_LVHA.bvh");
+
+			c4 = new wmp.Character("Zari", jointmaterial2,bonematerial3, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder2);
+			c4.skelScale = 0.5;
+			c4.setOriginPosition(-100,0,10);
+			c4.loadFromURL("res/AV_8Walk_LVLA_Rep1.bvh");
 
 			characters.push(c1);
 			characters.push(c2);
+			characters.push(c3);
+			characters.push(c4);
 
 			renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
@@ -170,7 +144,7 @@
 			requestAnimationFrame( animate );
 			
 			characters.forEach(function (c) {
-				if (1 && typeof c.bvh !== 'undefined'){		
+				if (1 && c.ready){		
 				if (c.playing) {
 					c.animIndex = c.animOffset + Math.floor( (Date.now() - c.animStartTimeRef) / c.bvh.frameTime / 1000);
 					
@@ -183,8 +157,7 @@
 				}
 			}
 			});
-
-			
+		
 			renderer.render( scene, camera );
 		}
 		</script>

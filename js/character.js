@@ -1,20 +1,27 @@
 var wmp = wmp || {};
 wmp.Character = wmp.Character || {};
 
-wmp.Character = function(n, jm, bm){
+wmp.Character = function(n, jm, bm, jg, bg){
 	this.name = n;
+	
 	this.jointMaterial = jm;
 	this.boneMaterial = bm;
+	this.makeJointGeometryFCN = jg;
+	this.makeBoneGeometryFCN = bg;
+
+	this.originPosition = new THREE.Vector3(0,0,0);
+
 	this.bvh = [];
+	this.ready = false;
 	this.skelScale = 1;
 	this.jointMeshes = [];
 	this.boneMeshes = [];
 	this.rootMeshes = [];
+	
 	this.animIndex = 0;
-
 	this.animStartTimeRef = 0;
 	this.animOffset = 0;
-	this.playing = false;
+	this.playing = true;
 
 	this.debug = true;
 
@@ -27,60 +34,65 @@ wmp.Character = function(n, jm, bm){
 			console.log(self.name + ": "+m.toString());
 	};
 
-	this.loadFromURL = function(url) {
+	this.loadFromURL = function(url, callback) {
 		self.log("Loading the mocap file ...");
 		Pace.start();
 		reader = new BVHReader(this.name+"READER");
 		this.url = url;
-		reader.load(url, this.createObjects);
+		reader.load(url, function (data) {
+			self.bvh = data;
+			self.log("Mocap file loaded.");
+
+			self.log("Creating the WebGL Joints.");
+			self.buildSkelJoints(self.bvh.getSkeleton(),0);
+
+			self.log("Creating the WebGL Bones.");
+			(self.buildSkelBones(self.jointMeshes[0])).forEach(function (c){
+				self.rootMeshes.push(c);
+				scene.add(c);
+			});				
+			scene.add(self.jointMeshes[0]);
+			self.setSkeletonScale(self.skelScale);
+			self.log("Ready!");
+			self.ready = true;
+			if (callback)
+				callback();
+		});
 	};
 
-	this.createObjects = function (data) {
-		self.bvh = data;
-		self.log("Mocap file loaded.");
-
-		self.log("Creating the WebGL Joints.");
-		self.buildSkelJoints(self.bvh.getSkeleton(),0);
-
-		self.log("Creating the WebGL Bones.");
-		(self.buildSkelBones(self.jointMeshes[0])).forEach(function (c){
-			self.rootMeshes.push(c);
-			scene.add(c);
-		});				
-		scene.add(self.jointMeshes[0]);
-		self.setSkeletonScale(self.skelScale);
-		self.log("Ready!");
+	this.setOriginPosition = function (x, y, z) {
+		self.originPosition.set(x,y,z);
 	};
 
 	this.setSkeletonScale = function(s) {
-			self.rootMeshes.forEach(function (c) {
-				c.scale.set(s,s,s);
-			});
-			self.jointMeshes[0].scale.set(s,s,s);
-			self.jointMeshes[0].position.multiplyScalar(s);
-		};
+		self.rootMeshes.forEach(function (c) {
+			c.scale.set(s,s,s);
+		});
+		self.jointMeshes[0].scale.set(s,s,s);
+		self.jointMeshes[0].position.multiplyScalar(s);
+	};
 
 	this.buildSkelJoints = function (joint, parent) {
-			var jointMesh = new THREE.Mesh(new THREE.SphereGeometry(2/self.skelScale,60,60), self.jointMaterial);
-			jointMesh.bvhIndex = joint.jointIndex;
-			jointMesh.offsetVec = new THREE.Vector3(joint.offset[0],joint.offset[1],joint.offset[2]);
-			jointMesh.name = joint.name;
-			jointMesh.jointparent = parent;
-			var a,b,c;
-					if (!joint.isEndSite()) {
-						a = joint.channelNames[joint.channelNames.length - 3][0];
-						b = joint.channelNames[joint.channelNames.length - 2][0];
-						c = joint.channelNames[joint.channelNames.length - 1][0];
-					}
-			jointMesh.rotOrder = a+b+c;
-			self.jointMeshes.push(jointMesh);
-		
-			joint.children.forEach(function (child) {
-				jointMesh.add(self.buildSkelJoints(child, 1));
-			});
+		var jointMesh = new THREE.Mesh(self.makeJointGeometryFCN(joint.name, self.skelScale), self.jointMaterial);
+		jointMesh.bvhIndex = joint.jointIndex;
+		jointMesh.offsetVec = new THREE.Vector3(joint.offset[0],joint.offset[1],joint.offset[2]);
+		jointMesh.name = joint.name;
+		jointMesh.jointparent = parent;
+		var a,b,c;
+				if (!joint.isEndSite()) {
+					a = joint.channelNames[joint.channelNames.length - 3][0];
+					b = joint.channelNames[joint.channelNames.length - 2][0];
+					c = joint.channelNames[joint.channelNames.length - 1][0];
+				}
+		jointMesh.rotOrder = a+b+c;
+		self.jointMeshes.push(jointMesh);
+	
+		joint.children.forEach(function (child) {
+			jointMesh.add(self.buildSkelJoints(child, 1));
+		});
 
-			return jointMesh;
-		};
+		return jointMesh;
+	};
 
 	this.buildSkelBones = function (jointMesh) {
 		var bones = [];
@@ -93,7 +105,7 @@ wmp.Character = function(n, jm, bm){
 				// rotate
 				// translate (offset + position)
 				h = math.abs(childMesh.offsetVec.length());
-				var bgeometry = new THREE.CylinderGeometry(1.5/self.skelScale,0.7/self.skelScale,h,40);
+				var bgeometry = self.makeBoneGeometryFCN("",childMesh.name,h,self.skelScale);
 
 //Begin - Working for MS				
 			    if (childMesh.offsetVec.x < 0)
@@ -139,30 +151,27 @@ wmp.Character = function(n, jm, bm){
 
 		if (joint.jointparent != 0) {
 		 thisEuler = new THREE.Euler(
-			angle_trunc(bj.channels[frame][bj.rotationIndex.x] * torad),
-			angle_trunc(bj.channels[frame][bj.rotationIndex.y] * torad),
-			angle_trunc(bj.channels[frame][bj.rotationIndex.z] * torad),joint.rotOrder);
+			(bj.channels[frame][bj.rotationIndex.x] * torad),
+			(bj.channels[frame][bj.rotationIndex.y] * torad),
+			(bj.channels[frame][bj.rotationIndex.z] * torad),joint.rotOrder);
 		} else {
 		 thisEuler = new THREE.Euler(
-			angle_trunc(bj.channels[frame][bj.rotationIndex.x] * torad),
-			angle_trunc(bj.channels[frame][bj.rotationIndex.y] * torad),
-			angle_trunc(bj.channels[frame][bj.rotationIndex.z] * torad),joint.rotOrder);	
+			(bj.channels[frame][bj.rotationIndex.x] * torad),
+			(bj.channels[frame][bj.rotationIndex.y] * torad),
+			(bj.channels[frame][bj.rotationIndex.z] * torad),joint.rotOrder);	
 		}
 
 		joint.localRotMat = new THREE.Matrix4();
 		joint.localRotMat.makeRotationFromEuler(thisEuler);
+		joint.rotation.setFromRotationMatrix(joint.localRotMat);
 
 		if (joint.jointparent != 0) {					
-			joint.rotation.setFromRotationMatrix(joint.localRotMat);
 			joint.position.set(offsetVec.x, offsetVec.y, offsetVec.z);
-		} 
-		else {
-			joint.rotation.setFromRotationMatrix(joint.localRotMat);
-
+		} else { // root
 			joint.position.set(
-				bj.positions[frame][0] * self.skelScale,
-				bj.positions[frame][1] * self.skelScale,
-				bj.positions[frame][2] * self.skelScale);
+				bj.positions[frame][0] * self.skelScale + self.originPosition.x,
+				bj.positions[frame][1] * self.skelScale + self.originPosition.y,
+				bj.positions[frame][2] * self.skelScale + self.originPosition.z);
 		}
 	});
 
@@ -174,11 +183,11 @@ wmp.Character = function(n, jm, bm){
 		
 		bone.rotation.copy(bone.joint.rotation);//setFromRotationMatrix(bone.joint.localRotMat);				
 
-		if ( bone.parent.type === "Scene")  
+		if ( bone.parent.type === "Scene")  //root
 		{
-			bone.position.set(bj.positions[frame][0] * self.skelScale,
-						  bj.positions[frame][1] * self.skelScale,
-						  bj.positions[frame][2] * self.skelScale);
+			bone.position.set(bj.positions[frame][0] * self.skelScale + self.originPosition.x,
+						  bj.positions[frame][1] * self.skelScale + self.originPosition.y,
+						  bj.positions[frame][2] * self.skelScale + self.originPosition.z);
 		} else {
 			bone.position.set(offsetVec.x,
 							offsetVec.y,
@@ -189,17 +198,3 @@ wmp.Character = function(n, jm, bm){
 	});
 	};
 };
-
-	
-
-		function angle_trunc(a) {
-			return a;
-			while (a < -Math.PI)  
-				a += Math.PI * 2;
-			while (a >= Math.PI)  
-				a -= Math.PI * 2;
-			//lse
-			//	return a;
-			return a;
-		}
-

@@ -16,10 +16,6 @@ By Omid Alemi
 		<script src="bower_components/mathjs/dist/math.min.js"></script>
 		<script src="bower_components/jquery/dist/jquery.min.js"></script>
 		<script src="bower_components/three.js/build/three.min.js"></script>
-		<script src="bower_components/three.js/examples/js/loaders/ColladaLoader.js"></script>
-		<script src="bower_components/three.js/examples/js/loaders/AssimpJSONLoader.js"></script>
-		<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
-		<script src="bower_components/three.js/examples/js/loaders/collada/Animation.js"></script>
 		<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
 
 		<script src="js/bvhReader.js"></script>
@@ -46,6 +42,13 @@ By Omid Alemi
     			c.animOffset = c.animIndex;
     		});
 
+		});
+
+		$(window).on("resize", function(e) {
+			camera.aspect = window.innerWidth / window.innerHeight;
+    		camera.updateProjectionMatrix();
+
+    		renderer.setSize( window.innerWidth, window.innerHeight );
 		});
 		</script>
 

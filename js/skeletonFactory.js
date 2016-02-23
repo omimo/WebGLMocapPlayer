@@ -2,7 +2,7 @@ jointmaterial =  new THREE.MeshLambertMaterial({
 		color: 0xc57206,
 		emissive: 0x271c18,
 		side: THREE.DoubleSide,
-		shading: THREE.FlatShading,
+		// shading: THREE.FlatShading,
 		wireframe: false,
 		shininess: 90,
 	});
@@ -11,7 +11,7 @@ bonematerial = new THREE.MeshLambertMaterial({
 		color: 0xbd9a6d,
 		emissive: 0x271c18,
 		side: THREE.DoubleSide,
-		shading: THREE.FlatShading,
+		// shading: THREE.FlatShading,
 		wireframe: false
 	});
 
@@ -40,7 +40,32 @@ bonematerial3 = new THREE.MeshPhongMaterial({
 		side: THREE.DoubleSide
 	});
 
+markermaterial =  new THREE.MeshPhongMaterial({
+		color: 0xc57206,
+		emissive: 0x271c18,
+		side: THREE.DoubleSide,
+		shading: THREE.FlatShading,
+		wireframe: false,
+		shininess: 20,
+	});
 
+markermaterial2 =  new THREE.MeshPhongMaterial({
+		color: 0x1562a2,
+		emissive: 0x271c18,
+		side: THREE.DoubleSide,
+		shading: THREE.FlatShading,
+		wireframe: false,
+		shininess: 20,
+	});
+
+
+var makeMarkerGeometry_Sphere10 = function (markerName, scale) {
+	return new THREE.SphereGeometry(10,60,60);
+};
+
+var makeMarkerGeometry_Sphere3 = function (markerName, scale) {
+	return new THREE.SphereGeometry(3,60,60);
+};
 
 
 

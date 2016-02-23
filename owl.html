@@ -17,9 +17,11 @@ By Omid Alemi
 		<script src="bower_components/jquery/dist/jquery.min.js"></script>
 		<script src="bower_components/three.js/build/three.min.js"></script>
 		<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+		<script src="bower_components/papaparse/papaparse.min.js"></script>
 
 		<script src="js/bvhReader.js"></script>
 		<script src="js/bvhCharacter.js"></script>
+		<script src="js/c3dCharacter.js"></script>
 		<script src="js/skeletonFactory.js"></script>
 	</head>
 	<body>
@@ -78,7 +80,7 @@ By Omid Alemi
 			scene.add( ambientLight );
 
 			// Grid
-			var size = 170, step = 20;
+			var size = 300, step = 20;
 
 			var geometry = new THREE.PlaneGeometry( size*2, size*2);
 			var material = new THREE.MeshBasicMaterial( {color: 0x909090, side: THREE.DoubleSide, transparent: true, opacity: 0.7} );
@@ -102,37 +104,37 @@ By Omid Alemi
 
 		function init() {
 			scene = new THREE.Scene();
-			camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 30000 );
-			camera.position.set( 0, 80, 0 );
-			camera.position.z = 350;
+			camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 30000 );
+			camera.position.set( 0, 100, 0 );
+			camera.position.z = 650;
 			scene.add(camera);
 
 			set_the_scene();
 			
-			axes = new THREE.AxisHelper( 50 );
-			//scene.add( axes );
+			o1 = new wmp.C3DCharacter("Owl1", bonematerial2, makeMarkerGeometry_Sphere3);
+			o1.loadFromURL("/res/OWL_0011_armaascii.csv4", function() {});
+			o1.setOriginPosition(0,0,100);
 
-			c1 = new wmp.BVHCharacter("Mamali", jointmaterial2,bonematerial2, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder3);
-			c1.loadFromURL("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function() {c1.animFrame(0);});
+			o2 = new wmp.C3DCharacter("Owl2", markermaterial, makeMarkerGeometry_Sphere3);
+			o2.loadFromURL("/res/OWL_0008_armaascii.csv", function() {});
+			o2.setOriginPosition(200,0,-200);
 
-			c2 = new wmp.BVHCharacter("Gholi", jointmaterial,bonematerial, makeJointGeometry_Dode, makeBoneGeometry_Cylinder2);
-			c2.skelScale = 0.75;
-			c2.loadFromURL("res/GEMMA_DANCE_TRACK1_0002.bvh");
+			o3 = new wmp.C3DCharacter("Owl3", markermaterial2, makeMarkerGeometry_Sphere3);
+			o3.setOriginPosition(-200,0,-200);
+			o3.loadFromURL("/res/2015_07_02_Owl_003.csv", function() {});
 
-			c3 = new wmp.BVHCharacter("Vali", jointmaterial,bonematerial3, makeJointGeometry_Dode, makeBoneGeometry_Box1);
-			c3.skelScale = 1;
-			c3.setOriginPosition(100,0,-140);
-			c3.loadFromURL("res/AV_ImprovStatic_Meredith_LVHA.bvh");
+			o4 = new wmp.C3DCharacter("Owl4", markermaterial2, makeMarkerGeometry_Sphere10);
+			o4.loadFromURL("/res/2015_11_06_OWL_042.csv", function() {});
+			o4.setOriginPosition(-150,0,150);
 
-			c4 = new wmp.BVHCharacter("Zari", jointmaterial2,bonematerial3, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder2);
-			c4.skelScale = 0.5;
-			c4.setOriginPosition(-100,0,10);
-			c4.loadFromURL("res/AV_8Walk_LVLA_Rep1.bvh");
+			o5 = new wmp.C3DCharacter("Owl5", markermaterial2, makeMarkerGeometry_Sphere3);
+			//o5.loadFromURL("/res/2015_01_07_OWL_0010.csv", function() {});
 
-			characters.push(c1);
-			characters.push(c2);
-			characters.push(c3);
-			characters.push(c4);
+			characters.push(o1);
+			characters.push(o2);
+			characters.push(o3);
+			characters.push(o4);
+			characters.push(o5);
 
 			renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );

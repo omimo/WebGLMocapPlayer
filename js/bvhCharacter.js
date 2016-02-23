@@ -1,7 +1,7 @@
 var wmp = wmp || {};
-wmp.Character = wmp.Character || {};
+wmp.BVHCharacter = wmp.BVHCharacter || {};
 
-wmp.Character = function(n, jm, bm, jg, bg){
+wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 	this.name = n;
 	
 	this.jointMaterial = jm;
@@ -17,7 +17,10 @@ wmp.Character = function(n, jm, bm, jg, bg){
 	this.jointMeshes = [];
 	this.boneMeshes = [];
 	this.rootMeshes = [];
-	
+
+
+	this.frameTime = 1/30;
+	this.frameCount = 0;
 	this.animIndex = 0;
 	this.animStartTimeRef = 0;
 	this.animOffset = 0;
@@ -41,6 +44,9 @@ wmp.Character = function(n, jm, bm, jg, bg){
 		this.url = url;
 		reader.load(url, function (data) {
 			self.bvh = data;
+			self.frameCount = data.frameCount;
+			self.frameTime = data.frameTime;
+
 			self.log("Mocap file loaded.");
 
 			self.log("Creating the WebGL Joints.");

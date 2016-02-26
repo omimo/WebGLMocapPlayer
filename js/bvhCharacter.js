@@ -28,6 +28,9 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 
 	this.debug = true;
 
+	this.webSocket = [];
+	this.streamProtocol =  "BVHStream";
+
 	var self = this;
 
 	//
@@ -42,29 +45,117 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 		Pace.start();
 		reader = new BVHReader(this.name+"READER");
 		this.url = url;
-		reader.load(url, function (data) {
-			self.bvh = data;
-			self.frameCount = data.frameCount;
-			self.frameTime = data.frameTime;
-
-			self.log("Mocap file loaded.");
-
-			self.log("Creating the WebGL Joints.");
-			self.buildSkelJoints(self.bvh.getSkeleton(),0);
-
-			self.log("Creating the WebGL Bones.");
-			(self.buildSkelBones(self.jointMeshes[0])).forEach(function (c){
-				self.rootMeshes.push(c);
-				scene.add(c);
-			});				
-			scene.add(self.jointMeshes[0]);
-			self.setSkeletonScale(self.skelScale);
-			self.log("Ready!");
-			self.ready = true;
-			if (callback)
-				callback();
-		});
+		reader.load(url, self.createSkel, self.fillFrames);
+		this.callb = callback; 
 	};
+
+	this.fillFrames = function (data) {
+		self.log("Ready!");
+		self.ready = true;
+		
+		if (self.callb)
+			self.callb();
+	}
+
+	this.createSkel = function (data) {
+		self.bvh = data;
+		self.frameCount = data.frameCount;
+		self.frameTime = data.frameTime;
+
+		self.log("Mocap file loaded.");
+
+		self.log("Creating the WebGL Joints.");
+		self.buildSkelJoints(self.bvh.getSkeleton(),0);
+
+		self.log("Creating the WebGL Bones.");
+		(self.buildSkelBones(self.jointMeshes[0])).forEach(function (c){
+			self.rootMeshes.push(c);
+			scene.add(c);
+		});				
+		scene.add(self.jointMeshes[0]);
+		self.setSkeletonScale(self.skelScale);
+		self.setSkelUp();
+	};
+
+
+	// Beginning of the Stream Code
+	this.onHeaderReceived = function(data) {
+		self.log("Loading the mocap header (skeleton) from the stream...");
+		headerReader = new BVHStreamParser();
+		headerReader.readHeader(data, self.createSkel);
+
+		// if (self.callb)
+		// 	self.callb();
+
+		Pace.stop();
+	}
+
+	this.onDataChunckReceived = function(rawFrames) {
+		var aa = [];
+
+		for (f=1;f<rawFrames.length;f++) {
+			var parts = rawFrames[f].trim().split(" ");
+			for (var j = 0; j < parts.length; j++)
+				parts[j] = +parts[j];
+			aa.push(parts);
+		}
+		self.bvh.fillFrameArray(aa);
+        self.frameCount = aa.length;
+        self.log("Ready!");
+		self.ready = true;
+        
+	}
+
+	this.loadFromStream = function(url, callback) {
+		self.log("Connecting to the stream server...");
+
+		self.webSocket = new WebSocket(url);
+
+		self.webSocket.onerror = function(event) {
+			self.log("Error connecting to the stream server " + event.origin);
+		};
+
+		self.webSocket.onopen = function(event) {
+			self.log("Connected to the stream server " + event.origin);
+			Pace.stop();
+		};
+
+		self.webSocket.onmessage = function(event) {
+			// I'm not doing much of a type and content checking here. Let's just trust the sender for now!
+			// Protocol for header:
+			// $HEADER$
+			// BVH...
+			// Protocl for data chunk with id#:
+			// $FRAMES$id#$
+
+			var messageLines = event.data.split('\n');
+
+			self.log("Received somthing!");
+			self.log("The first line is : " + messageLines[0]);
+
+			if (messageLines.length < 1)
+				return;
+
+			if (messageLines[0] == "$HEADER$") {
+				self.onHeaderReceived(event.data);
+
+			} else if (messageLines[0].startsWith("$FRAMES$")) {
+				chunckID = parseInt(messageLines[0].split("$")[2]);
+				self.onDataChunckReceived(messageLines, chunckID);
+			}
+		};
+
+	};
+
+	this.requestFrames = function () {
+		self.webSocket.send("$GETFRAMES1$");
+	}
+
+	this.requestFrames2 = function () {
+		self.webSocket.send("$GETFRAMES2$");
+	}		
+
+	// End of the Stream Code
 
 	this.setOriginPosition = function (x, y, z) {
 		self.originPosition.set(x,y,z);
@@ -194,6 +285,51 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 			bone.position.set(bj.positions[frame][0] * self.skelScale + self.originPosition.x,
 						  bj.positions[frame][1] * self.skelScale + self.originPosition.y,
 						  bj.positions[frame][2] * self.skelScale + self.originPosition.z);
+		} else {
+			bone.position.set(offsetVec.x,
+							offsetVec.y,
+							offsetVec.z);
+		}
+
+	});
+	});
+	};
+
+	this.setSkelUp = function () {
+	this.jointMeshes[0].traverse(function (joint) {
+		if (typeof joint.bvhIndex === "undefined")
+			return;
+
+		var bj = self.bvh.jointArray[joint.bvhIndex];
+
+		var offsetVec = joint.offsetVec;
+		var torad = Math.PI / 180;
+		var thisEuler = [];
+
+		thisEuler = new THREE.Euler(0,0,0,joint.rotOrder);
+
+		joint.localRotMat = new THREE.Matrix4();
+		joint.localRotMat.makeRotationFromEuler(thisEuler);
+		joint.rotation.setFromRotationMatrix(joint.localRotMat);
+
+		if (joint.jointparent != 0) {					
+			joint.position.set(offsetVec.x, offsetVec.y, offsetVec.z);
+		} else { // root
+			joint.position.set(self.originPosition.x,self.originPosition.y,self.originPosition.z);
+		}
+	});
+
+	this.rootMeshes.forEach(function(rootMesh) {
+		rootMesh.traverse(function(bone,index) {
+		var bj = self.bvh.jointArray[bone.joint.bvhIndex];
+
+		var offsetVec = new THREE.Vector3(bj.offset[0],bj.offset[1],bj.offset[2]);
+		
+		bone.rotation.copy(bone.joint.rotation);//setFromRotationMatrix(bone.joint.localRotMat);				
+
+		if ( bone.parent.type === "Scene")  //root
+		{
+			bone.position.set(self.originPosition.x,self.originPosition.y,self.originPosition.z);
 		} else {
 			bone.position.set(offsetVec.x,
 							offsetVec.y,

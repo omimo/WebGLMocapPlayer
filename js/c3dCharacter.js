@@ -36,11 +36,11 @@ wmp.C3DCharacter = function(n, jm, jg){
 	this.loadFromURL = function(url, callback) {
 		self.log("Loading the mocap file ...");
 		Pace.start();
-		
+		url2 = "http://www.sfu.ca/~oalemi/webglplayer/" + url;
 		self.url = url;
-		Papa.parse(url, {
+		Papa.parse(url2, {
 		worker: true,
-		delimiter: ",",	// auto-detect
+		delimiter: ",",	
 		dynamicTyping: true,
 		download: true,
 		header: false,

@@ -58,6 +58,15 @@ markermaterial2 =  new THREE.MeshPhongMaterial({
 		shininess: 20,
 	});
 
+markermaterial3 =  new THREE.MeshPhongMaterial({
+		color: 0x555555,
+		emissive: 0x999999,
+		side: THREE.DoubleSide,
+		shading: THREE.FlatShading,
+		wireframe: false,
+		shininess: 20,
+	});
+
 
 var makeMarkerGeometry_Sphere10 = function (markerName, scale) {
 	return new THREE.SphereGeometry(10,60,60);

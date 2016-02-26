@@ -1,25 +1,19 @@
-// By Ankit
-var BVHReader = function () {
-    this.load = function (url, callbackHeader, callbackFrameArray) {
-        $.get(url, function (str) {
-            var dataReturn = parse(str);
+// BVH parser by Ankit
+// Stream by Omid
+
+
+var BVHStreamParser = function () {
+    this.readHeader = function (str, callback) {
+            var dataReturn = parseHeader(str);
             var jointStack = dataReturn[0];
             var jointMap = dataReturn[1];
             var jointArray = dataReturn[2];
             var connectivityMatrix = dataReturn[3]
-            _bvh = new BVHReader.BVH.Skeleton(jointStack[0], jointMap, jointArray, dataReturn[3], dataReturn[4], dataReturn[5], []);
-            
-            if (callbackHeader)
-                callbackHeader(_bvh,'BVH');
-
-            _bvh.fillFrameArray(dataReturn[6]);
-
-            if (callbackFrameArray)
-                   callbackFrameArray();
-        });
+            if (callback)
+                callback(new BVHStreamParser.BVH.Skeleton(jointStack[0], jointMap, jointArray, dataReturn[3], dataReturn[4], dataReturn[5], dataReturn[6]),'BVH');
     };
 
-    function parse(str) {
+    function parseHeader(str) {
         var lines = str.split('\n');
         var jointStack = [];
         var jointMap = {};
@@ -28,7 +22,7 @@ var BVHReader = function () {
         var frameCount, frameTime, frameArray = [];
         var i = 0;
         //parse structure
-        for (i = 1; i < lines.length; i++) {
+        for (i = 2; i < lines.length; i++) { //  start from 2 to skip the $HEADER$ command
             if (!parseLine(lines[i], jointStack, jointMap, jointArray, connectivityMatrix)) {
                 break;
             }
@@ -43,7 +37,7 @@ var BVHReader = function () {
                 frameCount = +(line.split(/\b/)[2]);
             } else if (line.indexOf("Frame Time") === 0) {
                 frameTime = +( line.substr(line.indexOf(":") + 1).trim() )
-            } else {
+            } else { /// maybe this should be removed
                 var parts = line.split(" ");
                 for (var j = 0; j < parts.length; j++)
                     parts[j] = +parts[j];
@@ -62,7 +56,7 @@ var BVHReader = function () {
             var parts = line.split(" ");
             var title = parts[1]; //temporary variable to be used after creating the joint object
             parts[1] = parts[1] + "-" + jointArray.length;
-            var joint = new BVHReader.BVH.Joint(parts[1]);
+            var joint = new BVHStreamParser.BVH.Joint(parts[1]);
             joint.title = title;
             jointStack.push(joint);
 
@@ -101,16 +95,6 @@ var BVHReader = function () {
                 child.parent = jointStack[jointStack.length - 1];
 
                 connectivityMatrix.push([child.parent, child])
-
-                // if(!connectivityMatrix[child.name]){
-                //     connectivityMatrix[child.name] = {}
-                // }
-                // connectivityMatrix[child.name][child.parent.name] = 1;
-
-                // if(!connectivityMatrix[child.parent.name]){
-                //     connectivityMatrix[child.parent.name] = {}
-                // }
-                // connectivityMatrix[child.parent.name][child.name] = 1;
             }
         } else if (line.indexOf("MOTION") == 0) {
             return false;
@@ -120,9 +104,9 @@ var BVHReader = function () {
     };
 };
 
-BVHReader.BVH = BVHReader.BVH || {};
+BVHStreamParser.BVH = BVHStreamParser.BVH || {};
 
-BVHReader.BVH.Joint = function (name, index) {
+BVHStreamParser.BVH.Joint = function (name, index) {
 
     this.name = name;
     this.children = [];
@@ -161,7 +145,7 @@ BVHReader.BVH.Joint = function (name, index) {
     }
 };
 
-BVHReader.BVH.Skeleton = function (root, map, arr, connectivityMatrix, frameCount, frameTime, frameArray) {
+BVHStreamParser.BVH.Skeleton = function (root, map, arr, connectivityMatrix, frameCount, frameTime, frameArray) {
     thisSkeleton = this;
     this.root = root;
     this.jointMap = map;
@@ -175,17 +159,15 @@ BVHReader.BVH.Skeleton = function (root, map, arr, connectivityMatrix, frameCoun
         this.jointArray[i].skeleton = thisSkeleton;
     }
 
-
-
     this.fillFrameArray = function (fa) {
         this.frameArray = fa;
+        this.frameCount = fa.length;
             //all the structures are ready. let's calculate the positions
     for(j=0; j < this.jointArray.length; j++){
         var joint = this.jointArray[j];
         updateWithPositions(joint);
     }
     }
-
     this.getChannels = function () {
         return frameArray;
     };
@@ -253,35 +235,10 @@ BVHReader.BVH.Skeleton = function (root, map, arr, connectivityMatrix, frameCoun
             yangle =  deg2rad(channel[joint.rotationIndex.y] || 0),
             zangle= deg2rad(channel[joint.rotationIndex.z] || 0);
 
-            // var rotMatrix = math.transpose(getRotationMatrix(xangle, yangle, zangle, "xyz"));
-            // var rotMatrix = getRotationMatrix1(xangle, yangle, zangle, "xyz"); //this also works
             var posMatrix = [xpos, ypos, zpos];
 
-            if(joint.parent){
-            	  posMatrix = [0,0,0];  //At least for the bvhs that we have, this should be set to 0
-
-                // var t = vectorAdd(joint.offset, posMatrix);
-                // var u = matrixMultiply(t, joint.parent.rotations[i]);
-
-                // joint.positions[i] = vectorAdd(u, joint.parent.positions[i]);
-                // joint.rotations[i] = matrixMultiply( rotMatrix, joint.parent.rotations[i]);
-                // joint.rotmat[i] = rotMatrix; 
-
-                 if (i==0 && (joint.name ==  "Spine" || joint.name == "L_Femur")) {
-                    /*console.log("head's rot mat: ");
-                    console.log(joint.rotations[i]);
-                    console.log(t);
-                    console.log(u);
-
-                    console.log("x: "+xangle + "y: "+yangle + "z: "+zangle );
-                    console.log(posMatrix);
-                    */
-                }
-
-            }else{
+            if(!joint.parent){
                 //its the root
-                // joint.rotations[i] = rotMatrix;
-                // joint.rotmat[i] = rotMatrix;
                 joint.positions[i] = posMatrix;//vectorAdd(joint.offset , posMatrix);
                 // ^ we can safely ignore the root's offset
             }
@@ -291,105 +248,4 @@ BVHReader.BVH.Skeleton = function (root, map, arr, connectivityMatrix, frameCoun
     function deg2rad(deg){
         return deg * (Math.PI/180);
     }
-
-
-    function getRotationMatrix(alpha, beta, gamma) {
-
-    //inputs are the intrinsic rotation angles in RADIANTS
-    var ca = Math.cos(alpha),
-    	sa = Math.sin(alpha),
-
-    	cb = Math.cos(beta),
-    	sb = Math.sin(beta),
-
-    	cg = Math.cos(gamma),
-    	sg = Math.sin(gamma),
-
-    Rx = [[1, 0, 0], [0, ca, -sa], [0, sa, ca]];
-
-    Ry = [[cb, 0, sb], [0, 1, 0], [-sb, 0, cb]];
-
-    Rz = [[cg, -sg, 0], [sg, cg, 0], [0,    0,   1]];
-
-
-
-
-    var Rzm = math.matrix(Rz);
-    var Rym = math.matrix(Ry);
-    var Rxm = math.matrix(Rx);
-
-    var tt = math.multiply(Rzm, Rym);
-
-    return  math.multiply(tt,Rxm).toArray();
-    //rotationMatrix = math. //Rz*Ry*Rx;
-
-    //     R = Rx*Ry*Rz;
-	}
-
-    function getRotationMatrix1 (xangle, yangle, zangle, order){
-        var c1 = Math.cos(xangle),
-        c2 = Math.cos(yangle),
-        c3 = Math.cos(zangle),
-        s1 = Math.sin(xangle),
-        s2 = Math.sin(yangle),
-        s3 = Math.sin(zangle);
-
-        if(order === undefined || order.trim() === ""){
-            order = "zxy";
-        }
-
-        var rotMat = [
-            [1,0,0],
-            [0,1,0],
-            [0,0,1]
-        ];
-
-        switch(order){
-            case "___zxy":
-                rotMat = [
-                    [c2*c3-s1*s2*s3, c2*s3+s1*s2*c3, -s2*c1],
-                    [-c1*s3, c1*c3, s1],
-                    [s2*c3+c2*s1*s3, s2*s3-c2*s1*c3, c2*c1]
-                ];
-            break;
-            default:
-              for (o in order){
-                var axis = order[o];
-                var t;
-                switch(axis){
-                    case "x":
-                        t = [
-                                [1, 0, 0],
-                                [0,  c1, s1],
-                                [0, -s1, c1],
-                            ]
-                        break;
-                    case "y":
-                        t = [
-                                [c2,0,-s2],
-                                [0,1,0],
-                                [s2,0,c2]
-                            ]
-                        break;
-                    case "z":
-                        t = [[c3,s3,0],[-s3,c3,0],[0,0,1]]
-                        break;
-                }
-
-                rotMat = matrixMultiply(t, rotMat)
-              }
-          }
-
-        return rotMat;
-    }
 };
-
-function vectorAdd(a, b){
-    return math.add(math.matrix(a), math.matrix(b)).toArray();
-}
-
-function matrixMultiply(m1, m2) {
-    var a = math.matrix(m1);
-    var b = math.matrix(m2);
-    return math.multiply(a, b).toArray();
-}

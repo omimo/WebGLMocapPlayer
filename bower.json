@@ -26,6 +26,9 @@
   "dependencies": {
     "jquery": "~2.2.0",
     "mathjs": "~2.6.0",
-    "three.js": "threejs#*"
+    "three.js": "threejs#*",
+    "WebHamsters": "^3.8.0",
+    "papaparse": "~4.1.2",
+    "pace": "~1.0.2"
   }
 }

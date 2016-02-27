@@ -2,7 +2,10 @@
 var BVHReader = function () {
     this.load = function (url, callbackHeader, callbackFrameArray) {
         $.get(url, function (str) {
+            
             var dataReturn = parse(str);
+
+            
             var jointStack = dataReturn[0];
             var jointMap = dataReturn[1];
             var jointArray = dataReturn[2];
@@ -11,11 +14,12 @@ var BVHReader = function () {
             
             if (callbackHeader)
                 callbackHeader(_bvh,'BVH');
-
+            console.log("Blah");
             _bvh.fillFrameArray(dataReturn[6]);
 
             if (callbackFrameArray)
                    callbackFrameArray();
+
         });
     };
 
@@ -179,6 +183,7 @@ BVHReader.BVH.Skeleton = function (root, map, arr, connectivityMatrix, frameCoun
 
     this.fillFrameArray = function (fa) {
         this.frameArray = fa;
+        this.frameCount = fa.length;
             //all the structures are ready. let's calculate the positions
     for(j=0; j < this.jointArray.length; j++){
         var joint = this.jointArray[j];

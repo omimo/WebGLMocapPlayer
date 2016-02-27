@@ -9,16 +9,16 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 	this.makeJointGeometryFCN = jg;
 	this.makeBoneGeometryFCN = bg;
 
-	this.originPosition = new THREE.Vector3(0,0,0);
-
 	this.bvh = [];
-	this.ready = false;
+	
 	this.skelScale = 1;
 	this.jointMeshes = [];
 	this.boneMeshes = [];
 	this.rootMeshes = [];
 
+	this.originPosition = new THREE.Vector3(0,0,0);
 
+	this.ready = false;
 	this.frameTime = 1/30;
 	this.frameCount = 0;
 	this.animIndex = 0;
@@ -27,9 +27,12 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 	this.playing = true;
 
 	this.debug = true;
+	this.useWorker = true;
 
 	this.webSocket = [];
 	this.streamProtocol =  "BVHStream";
+	this.keepStreamedFrames = true;
+	this.isStreaming = false;
 
 	var self = this;
 
@@ -46,13 +49,15 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 		reader = new BVHReader(this.name+"READER");
 		this.url = url;
 		reader.load(url, self.createSkel, self.fillFrames);
+	
 		this.callb = callback; 
 	};
 
-	this.fillFrames = function (data) {
+	this.fillFrames = function () {
 		self.log("Ready!");
 		self.ready = true;
-		
+		self.playing = true;
+
 		if (self.callb)
 			self.callb();
 	}
@@ -99,15 +104,17 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 				parts[j] = +parts[j];
 			aa.push(parts);
 		}
-		self.bvh.fillFrameArray(aa);
-        self.frameCount = aa.length;
-        self.log("Ready!");
-		self.ready = true;
-        
+		diff = self.bvh.fillFrameArray(aa);
+        self.frameCount = self.bvh.frameArray.length;
+
+		self.animIndex -= math.min(0,math.max(rawFrames.length-1, self.bvh.bufferSize));
+      	self.fillFrames();
+        Pace.stop();
 	}
 
 	this.loadFromStream = function(url, callback) {
 		self.log("Connecting to the stream server...");
+		self.isStreaming = true;
 
 		self.webSocket = new WebSocket(url);
 
@@ -147,13 +154,9 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 
 	};
 
-	this.requestFrames = function () {
-		self.webSocket.send("$GETFRAMES1$");
+	this.requestFrames = function (i) {
+		self.webSocket.send("$GETFRAMES"+i+"$");
 	}
-
-	this.requestFrames2 = function () {
-		self.webSocket.send("$GETFRAMES2$");
-	}		
 
 	// End of the Stream Code
 
@@ -236,63 +239,73 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 		};
 
 	this.animFrame = function (frame) {
-	this.jointMeshes[0].traverse(function (joint) {
-		if (typeof joint.bvhIndex === "undefined")
-			return;
+		this.jointMeshes[0].traverse(function (joint) {
+			if (typeof joint.bvhIndex === "undefined")
+				return;
 
-		var bj = self.bvh.jointArray[joint.bvhIndex];
+			var bj = self.bvh.jointArray[joint.bvhIndex];
 
-		var offsetVec = joint.offsetVec;
-		var torad = Math.PI / 180;
-		var thisEuler = [];
+			var offsetVec = joint.offsetVec;
+			var torad = Math.PI / 180;
+			var thisEuler = [];
 
-		if (joint.jointparent != 0) {
-		 thisEuler = new THREE.Euler(
-			(bj.channels[frame][bj.rotationIndex.x] * torad),
-			(bj.channels[frame][bj.rotationIndex.y] * torad),
-			(bj.channels[frame][bj.rotationIndex.z] * torad),joint.rotOrder);
-		} else {
+
 		 thisEuler = new THREE.Euler(
 			(bj.channels[frame][bj.rotationIndex.x] * torad),
 			(bj.channels[frame][bj.rotationIndex.y] * torad),
 			(bj.channels[frame][bj.rotationIndex.z] * torad),joint.rotOrder);	
+			
+
+			joint.localRotMat = new THREE.Matrix4();
+			joint.localRotMat.makeRotationFromEuler(thisEuler);
+			joint.rotation.setFromRotationMatrix(joint.localRotMat);
+
+			if (joint.jointparent != 0) {					
+				joint.position.set(offsetVec.x, offsetVec.y, offsetVec.z);
+			} else { // root
+				joint.position.set(
+					bj.channels[frame][bj.positionIndex.x] * self.skelScale + self.originPosition.x,
+					bj.channels[frame][bj.positionIndex.y] * self.skelScale + self.originPosition.y,
+					bj.channels[frame][bj.positionIndex.z] * self.skelScale + self.originPosition.z);
+			}
+		});
+
+		this.rootMeshes.forEach(function(rootMesh) {
+			rootMesh.traverse(function(bone,index) {
+			var bj = self.bvh.jointArray[bone.joint.bvhIndex];
+
+			var offsetVec = new THREE.Vector3(bj.offset[0],bj.offset[1],bj.offset[2]);
+			
+			bone.rotation.copy(bone.joint.rotation);//setFromRotationMatrix(bone.joint.localRotMat);				
+
+			if ( bone.parent.type === "Scene")  //root
+			{
+				bone.position.set(bj.channels[frame][bj.positionIndex.x] * self.skelScale + self.originPosition.x,
+							  bj.channels[frame][bj.positionIndex.y] * self.skelScale + self.originPosition.y,
+							  bj.channels[frame][bj.positionIndex.z] * self.skelScale + self.originPosition.z);
+			} else {
+				bone.position.set(offsetVec.x,
+								offsetVec.y,
+								offsetVec.z);
+			}
+
+		});
+		});
+
+
+		if (self.isStreaming && frame >= self.frameCount - 5 ) {
+			self.animIndex = self.frameCount - 1;
+			self.playing = false;
+
 		}
 
-		joint.localRotMat = new THREE.Matrix4();
-		joint.localRotMat.makeRotationFromEuler(thisEuler);
-		joint.rotation.setFromRotationMatrix(joint.localRotMat);
+		cx = self.jointMeshes[0].matrixWorld.elements[12];
+		cy = self.jointMeshes[0].matrixWorld.elements[13];
+		cz = self.jointMeshes[0].matrixWorld.elements[14];
 
-		if (joint.jointparent != 0) {					
-			joint.position.set(offsetVec.x, offsetVec.y, offsetVec.z);
-		} else { // root
-			joint.position.set(
-				bj.positions[frame][0] * self.skelScale + self.originPosition.x,
-				bj.positions[frame][1] * self.skelScale + self.originPosition.y,
-				bj.positions[frame][2] * self.skelScale + self.originPosition.z);
-		}
-	});
+		//camera.position.set(cx+550,cy+550, cz+550);
+		//camera.lookAt(self.jointMeshes[0]);
 
-	this.rootMeshes.forEach(function(rootMesh) {
-		rootMesh.traverse(function(bone,index) {
-		var bj = self.bvh.jointArray[bone.joint.bvhIndex];
-
-		var offsetVec = new THREE.Vector3(bj.offset[0],bj.offset[1],bj.offset[2]);
-		
-		bone.rotation.copy(bone.joint.rotation);//setFromRotationMatrix(bone.joint.localRotMat);				
-
-		if ( bone.parent.type === "Scene")  //root
-		{
-			bone.position.set(bj.positions[frame][0] * self.skelScale + self.originPosition.x,
-						  bj.positions[frame][1] * self.skelScale + self.originPosition.y,
-						  bj.positions[frame][2] * self.skelScale + self.originPosition.z);
-		} else {
-			bone.position.set(offsetVec.x,
-							offsetVec.y,
-							offsetVec.z);
-		}
-
-	});
-	});
 	};
 
 	this.setSkelUp = function () {

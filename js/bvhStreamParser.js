@@ -154,20 +154,45 @@ BVHStreamParser.BVH.Skeleton = function (root, map, arr, connectivityMatrix, fra
     this.frameCount = frameCount;
     this.frameTime = frameTime;
     this.frameArray = frameArray;
+    this.bufferSize = 500;
 
     for (i = 0; i < this.jointArray.length; i++) {
         this.jointArray[i].skeleton = thisSkeleton;
     }
 
     this.fillFrameArray = function (fa) {
-        this.frameArray = fa;
-        this.frameCount = fa.length;
-            //all the structures are ready. let's calculate the positions
-    for(j=0; j < this.jointArray.length; j++){
-        var joint = this.jointArray[j];
-        updateWithPositions(joint);
+        this.frameArray.push.apply(this.frameArray,fa);
+
+        diff = this.frameArray.length - this.bufferSize;
+        console.log(diff);
+        if (diff > 0) 
+            for (i=0;i<diff;i++)
+                this.frameArray.shift();
+
+        this.frameCount = this.frameArray.length;
+         
+        if (diff > 0) 
+            addedCount = this.frameCount;
+        else
+            addedCount = fa.length;
+
+        for(j=0; j < this.jointArray.length; j++){
+            var joint = this.jointArray[j];
+            updateWithPositionsSinceLast(joint, addedCount);
+        }
+        
+        return diff;
     }
+
+    this.consumeFrames = function (index) {
+        for (i=0;i<=index;i++) {
+            this.frameArray.shift();
+            for (j=0;j<this.jointArray.length;j++)
+                this.jointArray[j].channels.shift();
+        }
+        this.frameCount = this.frameArray.length;
     }
+
     this.getChannels = function () {
         return frameArray;
     };
@@ -230,10 +255,35 @@ BVHStreamParser.BVH.Skeleton = function (root, map, arr, connectivityMatrix, fra
             var channel = joint.channels[i];
             var xpos = channel[joint.positionIndex.x] || 0,
             ypos =  channel[joint.positionIndex.y] || 0,
-            zpos =  channel[joint.positionIndex.z] || 0,
-            xangle =  deg2rad(channel[joint.rotationIndex.x] || 0),
-            yangle =  deg2rad(channel[joint.rotationIndex.y] || 0),
-            zangle= deg2rad(channel[joint.rotationIndex.z] || 0);
+            zpos =  channel[joint.positionIndex.z] || 0;
+            // xangle =  deg2rad(channel[joint.rotationIndex.x] || 0),
+            // yangle =  deg2rad(channel[joint.rotationIndex.y] || 0),
+            // zangle= deg2rad(channel[joint.rotationIndex.z] || 0);
+
+            var posMatrix = [xpos, ypos, zpos];
+
+            if(!joint.parent){
+                //its the root
+                joint.positions[i] = posMatrix;//vectorAdd(joint.offset , posMatrix);
+                // ^ we can safely ignore the root's offset
+            }
+        }
+    }
+
+    function updateWithPositionsSinceLast(joint, addedCount){
+        var channelNames = joint.channelNames;
+        joint.channels = joint.getChannels();
+        joint.rotations = [];
+        joint.positions = [];
+        joint.rotmat = [];
+        for(i=joint.channels.length - addedCount;i < joint.channels.length; i++){
+            var channel = joint.channels[i];
+            var xpos = channel[joint.positionIndex.x] || 0,
+            ypos =  channel[joint.positionIndex.y] || 0,
+            zpos =  channel[joint.positionIndex.z] || 0;
+            // xangle =  deg2rad(channel[joint.rotationIndex.x] || 0),
+            // yangle =  deg2rad(channel[joint.rotationIndex.y] || 0),
+            // zangle= deg2rad(channel[joint.rotationIndex.z] || 0);
 
             var posMatrix = [xpos, ypos, zpos];
 

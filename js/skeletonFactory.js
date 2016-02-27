@@ -24,7 +24,6 @@ jointmaterial2 = new THREE.MeshPhongMaterial({
 		shading: THREE.FlatShading
 	});
 
-
 bonematerial2 = new THREE.MeshPhongMaterial({
 		color: 0x552211,
 		emissive: 0x551111,

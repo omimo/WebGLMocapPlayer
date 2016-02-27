@@ -1,23 +1,7 @@
-from SimpleWebSocketServer import WebSocket, SimpleWebSocketServer, SimpleSSLWebSocketServer
 import tornado.httpserver
 import tornado.websocket
 import tornado.ioloop
 import tornado.web
-
-class SimpleEcho(WebSocket):
-
-    def handleMessage(self):
-        # echo message back to client
-        print 'message handeled'
-        self.sendMessage('hey')
-
-    def handleConnected(self):
-        print self.address, 'connected'
-        self.sendMessage('I am here')
-
-    def handleClose(self):
-        print self.address, 'closed'
-
 
 
 class SocketHandler(tornado.websocket.WebSocketHandler):
@@ -30,14 +14,36 @@ class SocketHandler(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
     	print 'message handeled'
         if message == '$GETFRAMES1$':
-			print 'sending frames'
+			print 'sending frames1'
 			msg = ''
 			msg += '$FRAMES$1$\n'
 			fh = open("res/BvhFramesSample_Gemma.txt","r")
-			for i in range(1,500):
+			for i in range(1,450):
 				msg+=fh.readline()
 			fh.close()
 			self.write_message(msg);
+        if message == '$GETFRAMES2$':
+            print 'sending frames2'
+            msg = ''
+            msg += '$FRAMES$2$\n'
+            fh = open("res/BvhFramesSample_Gemma.txt","r")
+            for i in range(1,1000):
+                fh.readline()
+            for i in range(1,20):
+                msg+=fh.readline()
+            fh.close()
+            self.write_message(msg);
+        if message == '$GETFRAMES3$':
+            print 'sending frames3'
+            msg = ''
+            msg += '$FRAMES$3$\n'
+            fh = open("res/BvhFramesSample_Gemma.txt","r")
+            for i in range(1,3000):
+                fh.readline()
+            for i in range(1,800):
+                msg+=fh.readline()
+            fh.close()
+            self.write_message(msg);
 
     def on_close(self):
         print("WebSocket closed")

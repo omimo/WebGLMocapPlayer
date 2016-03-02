@@ -10,6 +10,7 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 	this.makeBoneGeometryFCN = bg;
 
 	this.bvh = [];
+	this.skeleton = new THREE.Group();
 	
 	this.skelScale = 1;
 	this.jointMeshes = [];
@@ -75,9 +76,9 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 		self.log("Creating the WebGL Bones.");
 		(self.buildSkelBones(self.jointMeshes[0])).forEach(function (c){
 			self.rootMeshes.push(c);
-			scene.add(c);
+			self.skeleton.add(c);
 		});				
-		scene.add(self.jointMeshes[0]);
+		self.skeleton.add(self.jointMeshes[0]);
 		self.setSkeletonScale(self.skelScale);
 		self.setSkelUp();
 	};
@@ -278,7 +279,7 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 			
 			bone.rotation.copy(bone.joint.rotation);//setFromRotationMatrix(bone.joint.localRotMat);				
 
-			if ( bone.parent.type === "Scene")  //root
+			if ( bone.parent.type === "Group")  //root
 			{
 				bone.position.set(bj.channels[frame][bj.positionIndex.x] * self.skelScale + self.originPosition.x,
 							  bj.channels[frame][bj.positionIndex.y] * self.skelScale + self.originPosition.y,
@@ -340,7 +341,7 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 		
 		bone.rotation.copy(bone.joint.rotation);//setFromRotationMatrix(bone.joint.localRotMat);				
 
-		if ( bone.parent.type === "Scene")  //root
+		if ( bone.parent.type === "Group")  //root
 		{
 			bone.position.set(self.originPosition.x,self.originPosition.y,self.originPosition.z);
 		} else {

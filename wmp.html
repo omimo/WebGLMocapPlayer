@@ -114,12 +114,12 @@ By Omid Alemi
 			//scene.add( axes );
 
 			c1 = new wmp.BVHCharacter("Mamali", jointmaterial2,bonematerial2, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder3);
-			c1.loadFromURL("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function() {c1.animFrame(0);});
+			c1.loadFromURL("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function() {scene.add(c1.skeleton);});
 
 			c2 = new wmp.BVHCharacter("Gholi", jointmaterial,bonematerial, makeJointGeometry_Dode, makeBoneGeometry_Cylinder2);
 			c2.skelScale = 0.75;
 			//c2.loadFromURL("res/GEMMA_DANCE_TRACK1_0002.bvh");
-			c2.loadFromURL("res/wsSampleHeader.bvh");
+			c2.loadFromURL("res/wsSampleHeader.bvh", function() {scene.add(c2.skeleton);});
 
 			c3 = new wmp.BVHCharacter("Vali", jointmaterial,bonematerial3, makeJointGeometry_Dode, makeBoneGeometry_Box1);
 			c3.skelScale = 1;
@@ -131,10 +131,14 @@ By Omid Alemi
 			c4.setOriginPosition(-100,0,10);
 			c4.loadFromURL("res/AV_8Walk_LVLA_Rep1.bvh");
 
+
+
 			characters.push(c1);
 			characters.push(c2);
 			characters.push(c3);
 			characters.push(c4);
+
+
 
 			renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );

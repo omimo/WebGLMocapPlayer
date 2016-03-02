@@ -107,7 +107,7 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 		diff = self.bvh.fillFrameArray(aa);
         self.frameCount = self.bvh.frameArray.length;
 
-		self.animIndex -= math.min(0,math.max(rawFrames.length-1, self.bvh.bufferSize));
+		self.animIndex -= math.min(0,math.max(rawFrames.length, self.bvh.bufferSize));
       	self.fillFrames();
         Pace.stop();
 	}

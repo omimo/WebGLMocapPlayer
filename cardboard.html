@@ -48,10 +48,7 @@ By Omid Alemi
 		});
 
 		$(window).on("resize", function(e) {
-			camera.aspect = window.innerWidth / window.innerHeight;
-    		camera.updateProjectionMatrix();
-			seffect.setSize( window.innerWidth, window.innerHeight );
-    		renderer.setSize( window.innerWidth, window.innerHeight );
+			resize();
 		});
 		</script>
 
@@ -59,7 +56,8 @@ By Omid Alemi
 		var scene, camera, renderer;
 		var geometry, material, mesh;
 		var seffect;
-
+        var clock;
+        
 		init();
 
 		animate();
@@ -105,12 +103,12 @@ By Omid Alemi
 
 
 
-		}
+		}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
 
 		function init() {
 			scene = new THREE.Scene();
 			camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.001, 30000);
-     		camera.position.set(0, 80, 300);
+     		camera.position.set(-50, 160, -700);
 			scene.add(camera);
 
 			set_the_scene();
@@ -119,10 +117,18 @@ By Omid Alemi
 			//scene.add( axes );
 
 			c1 = new wmp.BVHCharacter("Mamali", jointmaterial2,bonematerial2, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder3);
-			c1.loadFromURL("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function() {c1.animFrame(0);});
+			c1.loadFromURL("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function() {
+                c1.animFrame(0);
+                scene.add(c1.skeleton);
+                //camera.lookAt(c1.skeleton.children[0].position.x,c1.skeleton.children[0].position.y,c1.skeleton.children[0].position.z);
+                	camera.aspect = window.innerWidth / window.innerHeight;
+    		  camera.updateProjectionMatrix();
+			 seffect.setSize( window.innerWidth, window.innerHeight );
+    		  renderer.setSize( window.innerWidth, window.innerHeight );
+                });
 			
 			characters.push(c1);
-
+                                                                                                                                                                                                                                                                                                                    
 			renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 
@@ -133,31 +139,60 @@ By Omid Alemi
 
 			controls = new THREE.OrbitControls(camera, renderer.domElement);
 	        controls.target.set(
-	          camera.position.x + 0.1,
-	          camera.position.y,
-	          camera.position.z
+	          0,
+	          0 + 0.15,
+	          0 
 	        );
-			// controls.enablePan = false;
-			// controls.enableZoom = false;
-
+			 controls.enablePan = false;
+			 controls.enableZoom = false;
+            
 			function setOrientationControls(e) {
 		        if (!e.alpha) {
 		          return;
 		        }
-
+        
 		        controls = new THREE.DeviceOrientationControls(camera, true);
 		        controls.connect();
 		        controls.update();
 
-		        element.addEventListener('click', fullscreen, false);
-		        console.log("bbbb");
+		        renderer.domElement.addEventListener('click', fullscreen, false);
+		        
 		        window.removeEventListener('deviceorientation', setOrientationControls, true);
 		      }
+              
 		    window.addEventListener('deviceorientation', setOrientationControls, true);
-
+            
+            
+            clock = new THREE.Clock();
 		}
+        
+        function fullscreen() {
+        container = document.body;
+        if (container.requestFullscreen) {
+          container.requestFullscreen();
+        } else if (container.msRequestFullscreen) {
+          container.msRequestFullscreen();
+        } else if (container.mozRequestFullScreen) {
+          container.mozRequestFullScreen();
+        } else if (container.webkitRequestFullscreen) {
+          container.webkitRequestFullscreen();
+        }
+      }
+      
+      function resize() {
+             camera.aspect = window.innerWidth / window.innerHeight;
+			seffect.setSize( window.innerWidth, window.innerHeight );
+    		renderer.setSize( window.innerWidth, window.innerHeight );
+            camera.updateProjectionMatrix();
+      }
+      
+      function update(dt) {
+        resize();
+        camera.updateProjectionMatrix();
+       controls.update(dt);
+      }
 
-		function animate() {
+		function animate() {                                                                                                                                                                                                                                                                                                                      
 			requestAnimationFrame( animate );
 			
 			characters.forEach(function (c) {
@@ -174,8 +209,8 @@ By Omid Alemi
 				}
 			}
 			});
-		
-			//renderer.render( scene, camera );
+		  
+		      update(clock.getDelta());
 			seffect.render(scene, camera);
 		}
 		</script>

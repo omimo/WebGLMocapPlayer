@@ -99,6 +99,8 @@ By Omid Alemi
 
 			var line = new THREE.LineSegments( geometry, material );
 			scene.add( line );
+
+			scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
 		}
 
 		function init() {

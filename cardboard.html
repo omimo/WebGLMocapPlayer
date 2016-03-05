@@ -103,18 +103,44 @@ By Omid Alemi
 
 
 
-		}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+		}           
+        
+        function set_the_scene2() {
+            var light = new THREE.HemisphereLight(0xffffff, 0x000000, 0.8);
+            light.position.set( -50, 100, -200 );
+      scene.add(light);
+
+      var texture = THREE.ImageUtils.loadTexture(
+        'style/checker.png'
+      );
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat = new THREE.Vector2(50, 50);
+      //texture.anisotropy = renderer.getMaxAnisotropy();
+
+      var material = new THREE.MeshPhongMaterial({
+        color: 0xffffff,
+        specular: 0xffffff,
+        shininess: 20,
+        shading: THREE.FlatShading,
+        map: texture
+      });
+
+      var geometry = new THREE.PlaneGeometry(1000, 1000);
+
+      var mesh = new THREE.Mesh(geometry, material);
+      mesh.rotation.x = -Math.PI / 2;
+      scene.add(mesh);
+        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
 
 		function init() {
 			scene = new THREE.Scene();
-			camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.001, 30000);
-     		camera.position.set(-50, 160, -700);
+			camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1, 800);
+     		camera.position.set(-50, 60, -200);
 			scene.add(camera);
 
-			set_the_scene();
+			set_the_scene2();
 			
-			axes = new THREE.AxisHelper( 50 );
-			//scene.add( axes );
 
 			c1 = new wmp.BVHCharacter("Mamali", jointmaterial2,bonematerial2, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder3);
 			c1.loadFromURL("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function() {
@@ -122,9 +148,9 @@ By Omid Alemi
                 scene.add(c1.skeleton);
                 //camera.lookAt(c1.skeleton.children[0].position.x,c1.skeleton.children[0].position.y,c1.skeleton.children[0].position.z);
                 	camera.aspect = window.innerWidth / window.innerHeight;
-    		  camera.updateProjectionMatrix();
-			 seffect.setSize( window.innerWidth, window.innerHeight );
-    		  renderer.setSize( window.innerWidth, window.innerHeight );
+    		      camera.updateProjectionMatrix();
+			     seffect.setSize( window.innerWidth, window.innerHeight );
+    		   renderer.setSize( window.innerWidth, window.innerHeight );
                 });
 			
 			characters.push(c1);

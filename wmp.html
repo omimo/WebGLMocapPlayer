@@ -112,26 +112,26 @@ By Omid Alemi
 
 			set_the_scene();
 
-			c1 = new wmp.BVHCharacter("Mamali", jointmaterial2,bonematerial2, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder3);
+			c1 = new BVHCharacter("Mamali", jointmaterial2,bonematerial2, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder3);
 			c1.loadFromURL("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function() {scene.add(c1.skeleton);});
 
-			c2 = new wmp.BVHCharacter("Gholi", jointmaterial,bonematerial, makeJointGeometry_Dode, makeBoneGeometry_Cylinder2);
+			c2 = new BVHCharacter("Gholi", jointmaterial,bonematerial, makeJointGeometry_Dode, makeBoneGeometry_Cylinder2);
 			c2.setOriginPosition(0,0,160);
 			c2.skelScale = 0.75;
 			c2.loadFromURL("res/GEMMA_DANCE_TRACK1_0002.bvh",function() {scene.add(c2.skeleton);});
 			//c2.loadFromURL("res/wsSampleHeader.bvh", function() {scene.add(c2.skeleton);});
 
-			c3 = new wmp.BVHCharacter("Vali", jointmaterial,bonematerial3, makeJointGeometry_Dode, makeBoneGeometry_Box1);
+			c3 = new BVHCharacter("Vali", jointmaterial,bonematerial3, makeJointGeometry_Dode, makeBoneGeometry_Box1);
 			c3.skelScale = 1;
 			c3.setOriginPosition(100,0,-140);
 			c3.loadFromURL("res/AV_ImprovStatic_Meredith_LVHA.bvh",function() {scene.add(c3.skeleton);});
 
-			c4 = new wmp.BVHCharacter("Zari", jointmaterial2,bonematerial3, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder2);
+			c4 = new BVHCharacter("Zari", jointmaterial2,bonematerial3, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder2);
 			c4.skelScale = 0.5;
 			c4.setOriginPosition(-100,0,10);
 			c4.loadFromURL("res/AV_8Walk_LVLA_Rep1.bvh",function() {scene.add(c4.skeleton);});
 
-			o4 = new wmp.C3DCharacter("Owl4", markermaterial3, makeMarkerGeometry_Sphere3);
+			o4 = new C3DCharacter("Owl4", markermaterial3, makeMarkerGeometry_Sphere3);
 			o4.scale = 0.02;
 			o4.loadFromURL("res/2015_11_06_OWL_042.csv", function() {});
 			o4.setOriginPosition(-120,0,120);

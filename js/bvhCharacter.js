@@ -55,7 +55,7 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 	};
 
 	this.fillFrames = function () {
-		self.log("Ready!");
+		// self.log("Ready!");
 		self.ready = true;
 		self.playing = true;
 
@@ -90,8 +90,8 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 		headerReader = new BVHStreamParser();
 		headerReader.readHeader(data, self.createSkel);
 
-		// if (self.callb)
-		// 	self.callb();
+		 if (self.callb)
+		 	self.callb();
 
 		Pace.stop();
 	}
@@ -108,7 +108,15 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 		diff = self.bvh.fillFrameArray(aa);
         self.frameCount = self.bvh.frameArray.length;
 
-		self.animIndex -= math.min(0,math.max(rawFrames.length, self.bvh.bufferSize));
+         if (!self.playing) {
+             self.animStartTimeRef = Date.now();
+            //  self.animOffset -= rawFrames.length;
+         }
+    	// else
+    	    // self.animOffset = self.animIndex;
+        if (diff > 0)
+         self.animOffset -= rawFrames.length +1;
+		// self.animIndex -= rawFrames.length; //math.max(0,math.min(rawFrames.length, self.bvh.bufferSize));
       	self.fillFrames();
         Pace.stop();
 	}
@@ -116,7 +124,7 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 	this.loadFromStream = function(url, callback) {
 		self.log("Connecting to the stream server...");
 		self.isStreaming = true;
-
+        this.callb = callback; 
 		self.webSocket = new WebSocket(url);
 
 		self.webSocket.onerror = function(event) {
@@ -138,8 +146,8 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 
 			var messageLines = event.data.split('\n');
 
-			self.log("Received somthing!");
-			self.log("The first line is : " + messageLines[0]);
+			// self.log("Received somthing!");
+			// self.log("The first line is : " + messageLines[0]);
 
 			if (messageLines.length < 1)
 				return;
@@ -294,18 +302,13 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 		});
 
 
-		if (self.isStreaming && frame >= self.frameCount - 5 ) {
-			self.animIndex = self.frameCount - 1;
-			self.playing = false;
+		// if (self.isStreaming && frame >= self.frameCount - 5 ) {
+		// 	self.animIndex = self.frameCount - 1;
+		// 	self.playing = false;
 
-		}
+		// }
 
-		cx = self.jointMeshes[0].matrixWorld.elements[12];
-		cy = self.jointMeshes[0].matrixWorld.elements[13];
-		cz = self.jointMeshes[0].matrixWorld.elements[14];
 
-		//camera.position.set(cx+550,cy+550, cz+550);
-		//camera.lookAt(self.jointMeshes[0]);
 
 	};
 
@@ -330,6 +333,7 @@ wmp.BVHCharacter = function(n, jm, bm, jg, bg){
 			joint.position.set(offsetVec.x, offsetVec.y, offsetVec.z);
 		} else { // root
 			joint.position.set(self.originPosition.x,self.originPosition.y,self.originPosition.z);
+            console.log(joint.position);
 		}
 	});
 

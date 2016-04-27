@@ -75,6 +75,9 @@ var makeMarkerGeometry_Sphere3 = function (markerName, scale) {
 	return new THREE.SphereGeometry(3,60,60);
 };
 
+var makeMarkerGeometry_SphereX = function (markerName, scale) {
+	return new THREE.SphereGeometry(5,60,60);
+};
 
 
 var makeJointGeometry_Sphere1 = function (jointName, scale) {

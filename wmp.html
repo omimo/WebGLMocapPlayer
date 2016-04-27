@@ -18,9 +18,11 @@ By Omid Alemi
 		<script src="bower_components/three.js/build/three.min.js"></script>
 		<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
 		<script src="bower_components/WebHamsters/src/hamsters.min.js"></script>
+		<script src="bower_components/papaparse/papaparse.min.js"></script>
 
 		<script src="js/bvhReader.js"></script>
 		<script src="js/bvhCharacter.js"></script>
+		<script src="js/c3dCharacter.js"></script>
 		<script src="js/skeletonFactory.js"></script>
 	</head>
 	<body>
@@ -116,6 +118,7 @@ By Omid Alemi
 			c1.loadFromURL("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function() {scene.add(c1.skeleton);});
 
 			c2 = new wmp.BVHCharacter("Gholi", jointmaterial,bonematerial, makeJointGeometry_Dode, makeBoneGeometry_Cylinder2);
+			c2.setOriginPosition(0,0,160);
 			c2.skelScale = 0.75;
 			c2.loadFromURL("res/GEMMA_DANCE_TRACK1_0002.bvh",function() {scene.add(c2.skeleton);});
 			//c2.loadFromURL("res/wsSampleHeader.bvh", function() {scene.add(c2.skeleton);});
@@ -130,12 +133,16 @@ By Omid Alemi
 			c4.setOriginPosition(-100,0,10);
 			c4.loadFromURL("res/AV_8Walk_LVLA_Rep1.bvh",function() {scene.add(c4.skeleton);});
 
-
+			o4 = new wmp.C3DCharacter("Owl4", markermaterial3, makeMarkerGeometry_Sphere3);
+			o4.scale = 0.02;
+			o4.loadFromURL("res/2015_11_06_OWL_042.csv", function() {});
+			o4.setOriginPosition(-120,0,120);
 
 			characters.push(c1);
 			characters.push(c2);
 			characters.push(c3);
 			characters.push(c4);
+			characters.push(o4);
 
 
 

@@ -154,7 +154,7 @@ BVHStreamParser.BVH.Skeleton = function (root, map, arr, connectivityMatrix, fra
     this.frameCount = frameCount;
     this.frameTime = frameTime;
     this.frameArray = frameArray;
-    this.bufferSize = 500;
+    this.bufferSize = 200;
 
     for (i = 0; i < this.jointArray.length; i++) {
         this.jointArray[i].skeleton = thisSkeleton;
@@ -164,7 +164,7 @@ BVHStreamParser.BVH.Skeleton = function (root, map, arr, connectivityMatrix, fra
         this.frameArray.push.apply(this.frameArray,fa);
 
         diff = this.frameArray.length - this.bufferSize;
-        console.log(diff);
+        // console.log(diff);
         if (diff > 0) 
             for (i=0;i<diff;i++)
                 this.frameArray.shift();

@@ -36,7 +36,7 @@ By Omid Alemi
 
     		if (e.charCode == 83) { // S
     			// c2.loadFromStream("ws://localhost:6869");
-    			c2.loadFromStream("ws://localhost:7075");
+    			c2.loadFromStream("ws://localhost:7072",function() {scene.add(c2.skeleton);});
     		}
 
     		if (e.charCode == 82) { // R
@@ -51,14 +51,14 @@ By Omid Alemi
     			c2.requestFrames(3);
     		}
 
-    		characters.forEach(function (c){
-    			c.playing = playing;
+    		// characters.forEach(function (c){
+    		// 	c.playing = playing;
 
-    			if (playing)
-    			c.animStartTimeRef = Date.now();
-    		else
-    			c.animOffset = c.animIndex;
-    		});
+    		// 	if (playing)
+    		// 	c.animStartTimeRef = Date.now();
+    		// else
+    		// 	c.animOffset = c.animIndex;
+    		// });
 
 		});
 
@@ -117,15 +117,52 @@ By Omid Alemi
 			var line = new THREE.LineSegments( geometry, material );
 			scene.add( line );
 		}
+        
+        function set_the_scene2() {
+           
+            
+            var light = new THREE.HemisphereLight(0xffffff, 0x000000, 0.6);
+            light.position.set( -200, 400, -200 );
+            scene.add(light);
+            
+            var light2 = new THREE.HemisphereLight(0xffffff, 0x000000, 0.6);
+            light2.position.set( 200, 400, 200 );
+            scene.add(light2);
+            
+            
+     
+            
+      var texture = THREE.ImageUtils.loadTexture(
+        'style/checker.png'
+      );
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat = new THREE.Vector2(50, 50);
+      //texture.anisotropy = renderer.getMaxAnisotropy();
+
+      var material = new THREE.MeshPhongMaterial({
+        color: 0xffffff,
+        specular: 0xffffff,
+        shininess: 10,
+        shading: THREE.FlatShading,
+        map: texture
+      });
+
+      var geometry = new THREE.PlaneGeometry(5000, 5000);
+
+      var mesh = new THREE.Mesh(geometry, material);
+      mesh.rotation.x = -Math.PI / 2;
+      scene.add(mesh);
+        } 
 
 		function init() {
 			scene = new THREE.Scene();
-			camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 30000 );
+			camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 10, 4000 );
 			camera.position.set( 0, 80, 0 );
 			camera.position.z = 350;
 			scene.add(camera);
 
-			set_the_scene();
+			set_the_scene2();
 			
 			axes = new THREE.AxisHelper( 50 );
 			//scene.add( axes );
@@ -133,7 +170,7 @@ By Omid Alemi
 
 			c2 = new wmp.BVHCharacter("Gholi", jointmaterial,bonematerial, makeJointGeometry_Dode, makeBoneGeometry_Cylinder2);
 			c2.skelScale = 1.1;
-			
+			c2.setOriginPosition(0,38,0);
 
 			characters.push(c2);
 
@@ -141,7 +178,7 @@ By Omid Alemi
 			renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 
-			renderer.setClearColor( 0xeeeeee, 1);
+			renderer.setClearColor( 0x444444, 1);
 			document.body.appendChild( renderer.domElement );
 
 			controls = new THREE.OrbitControls( camera, renderer.domElement );
@@ -156,13 +193,22 @@ By Omid Alemi
 					c.animIndex = c.animOffset + Math.floor( (Date.now() - c.animStartTimeRef) / c.frameTime / 1000);
 					
 					if (c.animIndex >= c.frameCount) {
-						c.animOffset = 0;
-						c.animStartTimeRef = Date.now();
+						//c.animOffset = c.frameCount-1;
+						//c.animStartTimeRef = Date.now();
 						//c.animIndex = 0;
-						c.animIndex=c.frameCount-1;
+						//c.animIndex=c.frameCount-1;
 						c.playing = false;
+                        console.log("Stopped");
 					}
 					c.animFrame(c.animIndex);
+                    
+                    
+                    cx = c.jointMeshes[0].matrixWorld.elements[12];
+                    cy = c.jointMeshes[0].matrixWorld.elements[13];
+                    cz = c.jointMeshes[0].matrixWorld.elements[14];
+
+                    camera.position.set(cx,cy+80, cz+400);
+                    camera.lookAt(cx,cy-120,cz-20);
 				}
 				// console.log(c.animIndex);
 			}

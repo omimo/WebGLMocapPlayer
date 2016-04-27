@@ -141,9 +141,17 @@ By Omid Alemi
 
 			set_the_scene2();
 			
-
-			c1 = new wmp.BVHCharacter("Mamali", jointmaterial2,bonematerial2, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder3);
-			c1.loadFromURL("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function() {
+			
+			
+			c1 = new wmp.BVHCharacter("Mamali", jointmaterial,bonematerial, makeJointGeometry_Dode, makeBoneGeometry_Cylinder2);
+			c1.loadFromURL("res/GEMMA_DANCE_TRACK1_0002.bvh", function() {
+                
+                gazePoint = new THREE.Mesh(makeMarkerGeometry_Sphere3(), markermaterial3);
+				gazePoint.rotation.set(math.pi,0,math.pi);
+				gazePoint.position.set(0,-60,100);
+                c1.skeleton.children[3].children[0].children[0].children[0].add(gazePoint);
+                // c1.gazePoint = gazePoint;
+                
                 c1.animFrame(0);
                 scene.add(c1.skeleton);
                 //camera.lookAt(c1.skeleton.children[0].position.x,c1.skeleton.children[0].position.y,c1.skeleton.children[0].position.z);
@@ -153,7 +161,12 @@ By Omid Alemi
     		   renderer.setSize( window.innerWidth, window.innerHeight );
                 });
 			
+			c2 = new wmp.BVHCharacter("Gholi", jointmaterial2,bonematerial2, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder3);
+				c2.setOriginPosition(120,0,-50);
+			c2.loadFromURL("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function() {scene.add(c2.skeleton);});
+			
 			characters.push(c1);
+			characters.push(c2);
                                                                                                                                                                                                                                                                                                                     
 			renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
@@ -169,8 +182,8 @@ By Omid Alemi
 	          0 + 0.15,
 	          0 
 	        );
-			 controls.enablePan = false;
-			 controls.enableZoom = false;
+			//  controls.enablePan = false;
+			//  controls.enableZoom = false;
             
 			function setOrientationControls(e) {
 		        if (!e.alpha) {
@@ -232,6 +245,25 @@ By Omid Alemi
 						c.animIndex = 0;
 					}
 					c.animFrame(c.animIndex);
+                    
+					if (c.name =="Mamali") {
+                    
+                    headMS3_x = c.skeleton.children[3].children[0].children[0].children[0].matrixWorld.elements[12];
+                    headMS3_y = c.skeleton.children[3].children[0].children[0].children[0].matrixWorld.elements[13];
+                    headMS3_z = c.skeleton.children[3].children[0].children[0].children[0].matrixWorld.elements[14];
+                    var gazePoint = c.skeleton.children[3].children[0].children[0].children[0].children[0].matrixWorld.elements;
+                    if (gazePoint[14] > headMS3_z)
+                        zz = 5;
+                    else
+                        zz = -5;
+                        
+                    camera.position.set(headMS3_x,headMS3_y+1,headMS3_z+zz);                  
+                    
+                    if (controls.target)
+                        controls.target.set(gazePoint[12], gazePoint[13], gazePoint[14]);
+                    // else
+                       // camera.lookAt(new THREE.Vector3(gazePoint[12], gazePoint[13], gazePoint[14]));
+				}
 				}
 			}
 			});

@@ -21,14 +21,14 @@ jointmaterial2 = new THREE.MeshPhongMaterial({
 		//color: 0x302221,
 		emissive: 0x501111,
 		side: THREE.DoubleSide,
-		shading: THREE.FlatShading
+		// shading: THREE.FlatShading
 	});
 
 bonematerial2 = new THREE.MeshPhongMaterial({
 		color: 0x552211,
 		emissive: 0x551111,
 		side: THREE.DoubleSide,
-		shading: THREE.FlatShading
+		// shading: THREE.FlatShading
 	});
 
 bonematerial3 = new THREE.MeshPhongMaterial({
@@ -43,7 +43,7 @@ markermaterial =  new THREE.MeshPhongMaterial({
 		color: 0xc57206,
 		emissive: 0x271c18,
 		side: THREE.DoubleSide,
-		shading: THREE.FlatShading,
+		// shading: THREE.FlatShading,
 		wireframe: false,
 		shininess: 20,
 	});
@@ -52,7 +52,7 @@ markermaterial2 =  new THREE.MeshPhongMaterial({
 		color: 0x1562a2,
 		emissive: 0x271c18,
 		side: THREE.DoubleSide,
-		shading: THREE.FlatShading,
+		// shading: THREE.FlatShading,
 		wireframe: false,
 		shininess: 20,
 	});
@@ -61,7 +61,7 @@ markermaterial3 =  new THREE.MeshPhongMaterial({
 		color: 0x555555,
 		emissive: 0x999999,
 		side: THREE.DoubleSide,
-		shading: THREE.FlatShading,
+		// shading: THREE.FlatShading,
 		wireframe: false,
 		shininess: 20,
 	});

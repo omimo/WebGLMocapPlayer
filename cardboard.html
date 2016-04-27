@@ -21,8 +21,7 @@ By Omid Alemi
 		<script src="bower_components/three.js/examples/js/effects/StereoEffect.js"></script>
 		<script src="bower_components/WebHamsters/src/hamsters.min.js"></script>
 
-		<script src="js/bvhReader.js"></script>
-		<script src="js/bvhCharacter.js"></script>
+		<script src="../dist/jsMocapGL.js"></script>
 		<script src="js/skeletonFactory.js"></script>
 	</head>
 	<body>
@@ -143,7 +142,7 @@ By Omid Alemi
 			
 			
 			
-			c1 = new wmp.BVHCharacter("Mamali", jointmaterial,bonematerial, makeJointGeometry_Dode, makeBoneGeometry_Cylinder2);
+			c1 = new BVHCharacter("Mamali", jointmaterial,bonematerial, makeJointGeometry_Dode, makeBoneGeometry_Cylinder2);
 			c1.loadFromURL("res/GEMMA_DANCE_TRACK1_0002.bvh", function() {
                 
                 gazePoint = new THREE.Mesh(makeMarkerGeometry_Sphere3(), markermaterial3);
@@ -161,7 +160,7 @@ By Omid Alemi
     		   renderer.setSize( window.innerWidth, window.innerHeight );
                 });
 			
-			c2 = new wmp.BVHCharacter("Gholi", jointmaterial2,bonematerial2, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder3);
+			c2 = new BVHCharacter("Gholi", jointmaterial2,bonematerial2, makeJointGeometry_Sphere1, makeBoneGeometry_Cylinder3);
 				c2.setOriginPosition(120,0,-50);
 			c2.loadFromURL("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function() {scene.add(c2.skeleton);});
 			

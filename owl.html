@@ -19,9 +19,7 @@ By Omid Alemi
 		<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
 		<script src="bower_components/papaparse/papaparse.min.js"></script>
 
-		<script src="js/bvhReader.js"></script>
-		<script src="js/bvhCharacter.js"></script>
-		<script src="js/c3dCharacter.js"></script>
+		<script src="../dist/jsMocapGL.js"></script>
 		<script src="js/skeletonFactory.js"></script>
 	</head>
 	<body>
@@ -111,23 +109,23 @@ By Omid Alemi
 
 			set_the_scene();
 			
-			o1 = new wmp.C3DCharacter("Owl1", bonematerial2, makeMarkerGeometry_Sphere3);
+			o1 = new C3DCharacter("Owl1", bonematerial2, makeMarkerGeometry_Sphere3);
 			o1.loadFromURL("res/OWL_0011_armaascii.csv4", function() {});
 			o1.setOriginPosition(0,0,100);
 
-			o2 = new wmp.C3DCharacter("Owl2", markermaterial, makeMarkerGeometry_Sphere3);
+			o2 = new C3DCharacter("Owl2", markermaterial, makeMarkerGeometry_Sphere3);
 			o2.loadFromURL("res/OWL_0008_armaascii.csv", function() {});
 			o2.setOriginPosition(200,0,-200);
 
-			o3 = new wmp.C3DCharacter("Owl3", markermaterial2, makeMarkerGeometry_Sphere3);
+			o3 = new C3DCharacter("Owl3", markermaterial2, makeMarkerGeometry_Sphere3);
 			o3.setOriginPosition(-200,0,-200);
 			o3.loadFromURL("res/2015_07_02_Owl_003.csv", function() {});
 
-			o4 = new wmp.C3DCharacter("Owl4", markermaterial3, makeMarkerGeometry_Sphere10);
+			o4 = new C3DCharacter("Owl4", markermaterial3, makeMarkerGeometry_Sphere10);
 			o4.loadFromURL("res/2015_11_06_OWL_042.csv", function() {});
 			o4.setOriginPosition(-150,0,150);
 
-			o5 = new wmp.C3DCharacter("Owl5", markermaterial2, makeMarkerGeometry_Sphere3);
+			o5 = new C3DCharacter("Owl5", markermaterial2, makeMarkerGeometry_Sphere3);
 			//o5.loadFromURL("/res/2015_01_07_OWL_0010.csv", function() {});
 
 			characters.push(o1);

@@ -22,9 +22,7 @@ By Omid Alemi
 		<script src="bower_components/SoundManager2/script/soundmanager2-jsmin.js"></script>
 
 
-		<script src="js/bvhReader.js"></script>
-		<script src="js/bvhCharacter.js"></script>
-		<script src="js/c3dCharacter.js"></script>
+		<script src="../dist/jsMocapGL.js"></script>
 		<script src="js/skeletonFactory.js"></script>
 	</head>
 	<body>
@@ -118,7 +116,7 @@ By Omid Alemi
 
 		
 
-			c2 = new wmp.BVHCharacter("Gholi", jointmaterial,bonematerial, makeJointGeometry_Dode, makeBoneGeometry_Cylinder2);
+			c2 = new BVHCharacter("Gholi", jointmaterial,bonematerial, makeJointGeometry_Dode, makeBoneGeometry_Cylinder2);
 			c2.setOriginPosition(0,0,160);
 			c2.skelScale = 0.75;
 			c2.loadFromURL("res/Gemma_sync.bvh",function() {

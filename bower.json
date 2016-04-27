@@ -29,6 +29,7 @@
     "three.js": "threejs#*",
     "WebHamsters": "^3.8.0",
     "papaparse": "~4.1.2",
-    "pace": "~1.0.2"
+    "pace": "~1.0.2",
+    "SoundManager2": "soundmanager2#*"
   }
 }

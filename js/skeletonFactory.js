@@ -114,3 +114,12 @@ var makeBoneGeometry_Cylinder3 = function (joint1Name, joint2Name, length, scale
 var makeBoneGeometry_Box1 = function (joint1Name, joint2Name, length, scale) {
 	return 	new THREE.BoxGeometry(1/scale,length,1/scale,40);
 };
+
+
+var makeJointGeometry_Empty = function (jointName, scale) {
+	return new THREE.SphereGeometry(0.001,60,60);
+};
+
+var makeBoneGeometry_Empty = function (joint1Name, joint2Name, length, scale) {
+	return 	new THREE.CylinderGeometry(0.001,0.001,0.001,40);
+};

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<!-- WebGl Mocap Player - V 0.2 
+By Omid Alemi
+ -->
+<html lang="en">
+
+<head>
+	<title>WebGL Mocap Viewer</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+
+	</style>
+	<link rel="stylesheet" href="style/pace.css"></link>
+
+	<script src="bower_components/pace/pace.min.js"></script>
+	<script src="bower_components/mathjs/dist/math.min.js"></script>
+	<script src="bower_components/jquery/dist/jquery.min.js"></script>
+	<script src="bower_components/three.js/build/three.min.js"></script>
+	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
+	<script src="js/GPUParticleSystem_skel.js"></script>
+	<script src="bower_components/WebHamsters/src/hamsters.min.js"></script>
+	<script src="bower_components/papaparse/papaparse.min.js"></script>
+
+	<script src="../dist/jsMocapGL.js"></script>
+	<script src="js/skeletonFactory.js"></script>
+	<script src="js/particleUtils.js"></script>
+</head>
+
+<body>
+	<script type="text/javascript">
+		var characters = [];
+		var playing = true;
+
+
+		$(document).on("keypress", function(e) {
+			if (e.charCode == 32)
+				playing = !playing;
+
+			characters.forEach(function(c) {
+				c.playing = playing;
+
+				if (playing)
+					c.animStartTimeRef = Date.now();
+				else
+					c.animOffset = c.animIndex;
+			});
+
+		});
+
+		$(window).on("resize", function(e) {
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+		});
+	</script>
+
+
+
+	<script>
+		var scene, camera, renderer,
+			clock = new THREE.Clock(true),
+			tick = 0,
+			particleSystems = [];
+
+		init();
+
+		animate();
+
+		function set_the_scene() {
+			// Lights
+			var ambientLight = new THREE.AmbientLight(0xffffff);
+			scene.add(ambientLight);
+
+			// Grid
+			var size = 170,
+				step = 20;
+
+			var geometry = new THREE.PlaneGeometry(size * 2, size * 2);
+			var material = new THREE.MeshBasicMaterial({
+				color: 0x111111,
+				side: THREE.DoubleSide,
+				transparent: true,
+				opacity: 0.7
+			});
+			var plane = new THREE.Mesh(geometry, material);
+			plane.position.set(0, 0, 0);
+			plane.rotation.set(math.pi / 2, 0, 0);
+			scene.add(plane);
+		}
+
+		function init() {
+			scene = new THREE.Scene();
+			camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 1000);
+			camera.position.set(0, 80, 0);
+			camera.position.z = 350;
+			scene.add(camera);
+
+			set_the_scene();
+
+			setParticleSystem();
+
+			c1 = new BVHCharacter("Mamali",
+				jointmaterial2,
+				bonematerial2,
+				makeJointGeometry_Empty,
+				makeBoneGeometry_Empty);
+
+			c1.setOriginPosition(-100, 0, -100);
+
+			c1.loadFromURL("res/AV_8Walk_Meredith_HVHA_Rep1.bvh", function() {
+				scene.add(c1.skeleton);
+				setPSCharacter(c1);
+				c1.particleSystems.options = options1;
+				c1.particleSystems.spawnerOptions = spawnerOptions1;
+			});
+
+			c2 = new BVHCharacter("Gholi",
+				jointmaterial,
+				bonematerial,
+				makeJointGeometry_Empty,
+				makeBoneGeometry_Empty);
+
+			c2.setOriginPosition(30, 0, 160);
+
+			c2.loadFromURL("res/GEMMA_DANCE_TRACK1_0002.bvh", function() {
+				scene.add(c2.skeleton);
+				setPSCharacter(c2);
+				c2.particleSystems.options = options2;
+				c2.particleSystems.spawnerOptions = spawnerOptions2;
+			});
+
+			characters.push(c1);
+			characters.push(c2);
+
+			renderer = new THREE.WebGLRenderer({
+				antialias: true
+			});
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.gammaInput = true;
+			renderer.gammaOutput = true;
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setClearColor(0x222222, 1);
+
+			document.body.appendChild(renderer.domElement);
+
+			controls = new THREE.OrbitControls(camera, renderer.domElement);
+		}
+
+		function animate() {
+			requestAnimationFrame(animate);
+
+			characters.forEach(function(c) {
+				if (1 && c.ready) {
+					if (c.playing) {
+						c.animIndex = c.animOffset + Math.floor((Date.now() - c.animStartTimeRef) / c.frameTime / 1000);
+
+						if (c.animIndex >= c.frameCount) {
+							c.animOffset = 0;
+							c.animStartTimeRef = Date.now();
+							c.animIndex = 0;
+						}
+						c.animFrame(c.animIndex);
+
+						var delta = clock.getDelta() * c.particleSystems.spawnerOptions.timeScale;
+						tick += delta;
+						if (tick < 0) tick = 0;
+
+						if (delta > 0) {
+							for (var x = 0; x < c.particleSystems.spawnerOptions.spawnRate * delta; x++) {
+								c.particleSystems.forEach(function(ps) {
+									c.particleSystems.options.position.x = ps.joint.matrixWorld.elements[12];
+									c.particleSystems.options.position.y = ps.joint.matrixWorld.elements[13];
+									c.particleSystems.options.position.z = ps.joint.matrixWorld.elements[14];
+
+									ps.spawnParticle(c.particleSystems.options);
+								});
+							}
+						}
+
+						c.particleSystems.forEach(function(ps) {
+							ps.update(tick);
+						});
+					}
+				}
+			});
+
+			controls.update();
+			renderer.render(scene, camera);
+		}
+	</script>
+</body>
+
+</html>

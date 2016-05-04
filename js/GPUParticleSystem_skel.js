@@ -200,7 +200,7 @@ THREE.GPUJointParticleSystem = function(options) {
 
   var textureLoader = new THREE.TextureLoader();
 
-  self.particleNoiseTex = textureLoader.load("style/perlin-512.png");
+  self.particleNoiseTex = textureLoader.load("style/snowflake3.png");
   self.particleNoiseTex.wrapS = self.particleNoiseTex.wrapT = THREE.RepeatWrapping;
 
   self.particleSpriteTex = textureLoader.load("style/particle2.png");

@@ -7,7 +7,7 @@ jointmaterial =  new THREE.MeshLambertMaterial({
 		shininess: 90,
 	});
 
-bonematerial = new THREE.MeshLambertMaterial({
+bonematerial = new THREE.MeshPhongMaterial({
 		color: 0xbd9a6d,
 		emissive: 0x271c18,
 		side: THREE.DoubleSide,
@@ -17,18 +17,19 @@ bonematerial = new THREE.MeshLambertMaterial({
 
 jointmaterial2 = new THREE.MeshPhongMaterial({
 		color: 0x1562a2,
-		emissive: 0x072554,
-		//color: 0x302221,
-		emissive: 0x501111,
-		side: THREE.DoubleSide,
-		// shading: THREE.FlatShading
+		emissive: 0x000000,
+		specular: 0x111111,
+		shininess: 30,
+		side: THREE.DoubleSide
 	});
 
 bonematerial2 = new THREE.MeshPhongMaterial({
 		color: 0x552211,
-		emissive: 0x551111,
-		side: THREE.DoubleSide,
-		// shading: THREE.FlatShading
+		emissive: 0x882211,
+		// emissive: 0x000000,
+		specular: 0x111111,
+		shininess: 30,
+		side: THREE.DoubleSide
 	});
 
 bonematerial3 = new THREE.MeshPhongMaterial({
@@ -39,6 +40,42 @@ bonematerial3 = new THREE.MeshPhongMaterial({
 		side: THREE.DoubleSide
 	});
 
+
+
+jointmaterial4 =  new THREE.MeshPhongMaterial({
+		color: 0xFF8A00,
+		emissive: 0x000000,
+		specular: 0x111111,
+		shininess: 90,
+		side: THREE.DoubleSide
+	});
+
+bonematerial4 = new THREE.MeshPhongMaterial({
+		color: 0x53633D,
+		emissive: 0x000000,
+		specular: 0xFFC450,
+		shininess: 90,
+		side: THREE.DoubleSide
+	});
+	
+
+jointmaterial5 = new THREE.MeshPhongMaterial({
+		color: 0xAA5533,
+		emissive: 0x000000,
+		specular: 0x111111,
+		shininess: 30,
+		side: THREE.DoubleSide
+	});
+
+bonematerial5 = new THREE.MeshPhongMaterial({
+		color: 0x552211,
+		emissive: 0x772211,
+		specular: 0x111111,
+		shininess: 30,
+		side: THREE.DoubleSide
+	});
+	
+		
 markermaterial =  new THREE.MeshPhongMaterial({
 		color: 0xc57206,
 		emissive: 0x271c18,
@@ -112,7 +149,7 @@ var makeBoneGeometry_Cylinder3 = function (joint1Name, joint2Name, length, scale
 };
 
 var makeBoneGeometry_Box1 = function (joint1Name, joint2Name, length, scale) {
-	return 	new THREE.BoxGeometry(1/scale,length,1/scale,40);
+	return 	new THREE.BoxGeometry(1/scale,length,1/scale,40);	
 };
 
 

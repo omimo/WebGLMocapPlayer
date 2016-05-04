@@ -21,6 +21,8 @@ By Omid Alemi
 
 		<script src="../dist/jsMocapGL.js"></script>
 		<script src="js/skeletonFactory.js"></script>
+		<script src="js/GPUParticleSystem_skel.js"></script>
+		<script src="js/particleUtils.js"></script>
 	</head>
 	<body>
 		<script type="text/javascript">
@@ -55,6 +57,8 @@ By Omid Alemi
 		<script>
 		var scene, camera, renderer;
 		var geometry, material, mesh;
+		var clock = new THREE.Clock(true),
+			tick = 0;
 		
 		init();
 
@@ -99,7 +103,109 @@ By Omid Alemi
 			var line = new THREE.LineSegments( geometry, material );
 			scene.add( line );
 		}
+		
+		function set_the_scene3() {
+			var light = new THREE.HemisphereLight(0xffffff, 0x000000, 1);
+			light.position.set(0, 200, 0);
+			scene.add(light);
 
+			var ambientLight = new THREE.AmbientLight(0x000000);
+			scene.add(ambientLight);
+
+			var textureLoader = new THREE.TextureLoader();
+
+			var texture = textureLoader.load('style/hardwood2_diffuse.jpg', function(tt) {
+				// var texture = textureLoader.load('style/brick_diffuse.jpg', function(tt) {
+				console.log(tt);
+			});
+
+			var textureBump = textureLoader.load('style/hardwood2_bump.jpg', function(tt) {
+				// var texture = textureLoader.load('style/brick_diffuse.jpg', function(tt) {
+			});
+
+			// console.log(texture);
+
+			texture.wrapS = THREE.RepeatWrapping;
+			texture.wrapT = THREE.RepeatWrapping;
+			texture.repeat = new THREE.Vector2(8, 4);
+
+			textureBump.wrapS = THREE.RepeatWrapping;
+			textureBump.wrapT = THREE.RepeatWrapping;
+			textureBump.repeat = new THREE.Vector2(8, 4);
+
+
+			//texture.anisotropy = renderer.getMaxAnisotropy();
+
+			var material = new THREE.MeshPhongMaterial({
+				color: 0xffffff,
+				specular: 0xffffff,
+				shininess: 100,
+				// shading: THREE.FlatShading,
+				map: texture,
+				bumpMap: textureBump
+
+			});
+
+			// var geometry = new THREE.PlaneGeometry(400, 400);
+			var geometry = new THREE.CubeGeometry(650, 650, 5);
+
+			var mesh = new THREE.Mesh(geometry, material);
+			mesh.position.y = -2;
+			mesh.rotation.x = -Math.PI / 2;
+			scene.add(mesh);
+		}
+		
+		function setPSCharacterC3D(c) {
+			c.particleSystems = [];
+			for (m=0;m<c.markerMeshes.length; m++) {
+				addPS(c.markerMeshes[m],c);
+			}
+		}
+		
+		function setParticleSystem() {
+			console.log("Setting the particle system options.");
+			// options passed during each spawned
+			options1 = {
+				position: new THREE.Vector3(),
+				positionRandomness: .9,
+				velocity: new THREE.Vector3(),
+				velocityRandomness: .5,
+				color: 0x9933dd,
+				colorRandomness: .2,
+				turbulence: .5,
+				lifetime: 1,
+				size: 20,
+				sizeRandomness: 0.2
+			};
+			
+			spawnerOptions1 = {
+				spawnRate: 1000,
+				horizontalSpeed: 1.4,
+				verticalSpeed: 1.33,
+				timeScale: 1
+			}
+			
+			options2 = {
+				position: new THREE.Vector3(),
+				positionRandomness: .9,
+				velocity: new THREE.Vector3(),
+				velocityRandomness: .5,
+				color: 0xaa8844,
+				colorRandomness: .1,
+				turbulence: .5,
+				lifetime: 4,
+				size: 3,
+				sizeRandomness: 1
+			};
+			
+			spawnerOptions2 = {
+				spawnRate: 2000,
+				horizontalSpeed: 1.5,
+				verticalSpeed: 1.33,
+				timeScale: 0.5
+			}
+		}
+		
 		function init() {
 			scene = new THREE.Scene();
 			camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 30000 );
@@ -107,10 +213,15 @@ By Omid Alemi
 			camera.position.z = 650;
 			scene.add(camera);
 
-			set_the_scene();
+			set_the_scene3();
+			setParticleSystem();
 			
-			o1 = new C3DCharacter("Owl1", bonematerial2, makeMarkerGeometry_Sphere3);
-			o1.loadFromURL("res/OWL_0011_armaascii.csv4", function() {});
+			o1 = new C3DCharacter("Owl1", bonematerial2, makeJointGeometry_Empty);
+			o1.loadFromURL("res/OWL_0011_armaascii.csv4", function() {
+				setPSCharacterC3D(o1);
+				o1.particleSystems.options = options1;
+				o1.particleSystems.spawnerOptions = spawnerOptions1;
+			});
 			o1.setOriginPosition(0,0,100);
 
 			o2 = new C3DCharacter("Owl2", markermaterial, makeMarkerGeometry_Sphere3);
@@ -157,6 +268,28 @@ By Omid Alemi
 						c.animIndex = 0;
 					}
 					c.animFrame(c.animIndex);
+					
+					if (c.particleSystems){
+					var delta = clock.getDelta() * c.particleSystems.spawnerOptions.timeScale;
+						tick += delta;
+						if (tick < 0) tick = 0;
+
+						if (delta > 0) {
+							for (var x = 0; x < c.particleSystems.spawnerOptions.spawnRate * delta; x++) {
+								c.particleSystems.forEach(function(ps) {
+									c.particleSystems.options.position.x = ps.joint.matrixWorld.elements[12];
+									c.particleSystems.options.position.y = ps.joint.matrixWorld.elements[13];
+									c.particleSystems.options.position.z = ps.joint.matrixWorld.elements[14];
+
+									ps.spawnParticle(c.particleSystems.options);
+								});
+							}
+						}
+
+						c.particleSystems.forEach(function(ps) {
+							ps.update(tick);
+						});
+					}
 				}
 			}
 			});

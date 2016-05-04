@@ -16,14 +16,14 @@ By Omid Alemi
 	<script src="bower_components/pace/pace.min.js"></script>
 	<script src="bower_components/mathjs/dist/math.min.js"></script>
 	<script src="bower_components/jquery/dist/jquery.min.js"></script>
-	<script src="bower_components/three.js/build/three.min.js"></script>
+	<script src="bower_components/three.js/build/three.js"></script>
 	<script src="bower_components/three.js/examples/js/controls/OrbitControls.js"></script>
-	<script src="js/GPUParticleSystem_skel.js"></script>
 	<script src="bower_components/WebHamsters/src/hamsters.min.js"></script>
 	<script src="bower_components/papaparse/papaparse.min.js"></script>
 
 	<script src="../dist/jsMocapGL.js"></script>
 	<script src="js/skeletonFactory.js"></script>
+	<script src="js/GPUParticleSystem_skel.js"></script>
 	<script src="js/particleUtils.js"></script>
 </head>
 
@@ -79,7 +79,7 @@ By Omid Alemi
 
 			var geometry = new THREE.PlaneGeometry(size * 2, size * 2);
 			var material = new THREE.MeshBasicMaterial({
-				color: 0x111111,
+				color: 0x010101,
 				side: THREE.DoubleSide,
 				transparent: true,
 				opacity: 0.7
@@ -89,14 +89,58 @@ By Omid Alemi
 			plane.rotation.set(math.pi / 2, 0, 0);
 			scene.add(plane);
 		}
-
+		
+		function setParticleSystem() {
+			console.log("Setting the particle system options.");
+			// options passed during each spawned
+			options1 = {
+				position: new THREE.Vector3(),
+				positionRandomness: .9,
+				velocity: new THREE.Vector3(),
+				velocityRandomness: .5,
+				color: 0xaa88ff,
+				colorRandomness: .2,
+				turbulence: .5,
+				lifetime: 10,
+				size: 2,
+				sizeRandomness: 1
+			};
+			
+			spawnerOptions1 = {
+				spawnRate: 2000,
+				horizontalSpeed: 1.5,
+				verticalSpeed: 1.33,
+				timeScale: 1
+			}
+			
+			options2 = {
+				position: new THREE.Vector3(),
+				positionRandomness: .9,
+				velocity: new THREE.Vector3(),
+				velocityRandomness: .5,
+				color: 0xaa8844,
+				colorRandomness: .1,
+				turbulence: .5,
+				lifetime: 4,
+				size: 5,
+				sizeRandomness: 1
+			};
+			
+			spawnerOptions2 = {
+				spawnRate: 2000,
+				horizontalSpeed: 1.5,
+				verticalSpeed: 1.33,
+				timeScale: 0.5
+			}
+		}
+		
 		function init() {
 			scene = new THREE.Scene();
-			camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 1, 1000);
+			camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
 			camera.position.set(0, 80, 0);
 			camera.position.z = 350;
 			scene.add(camera);
-
+			
 			set_the_scene();
 
 			setParticleSystem();
@@ -141,7 +185,7 @@ By Omid Alemi
 			renderer.gammaInput = true;
 			renderer.gammaOutput = true;
 			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setClearColor(0x222222, 1);
+			renderer.setClearColor(0x020202, 1);
 
 			document.body.appendChild(renderer.domElement);
 

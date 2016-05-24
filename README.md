@@ -1,6 +1,6 @@
 # WebGLMocapPlayer
 
-Sample players for the jsMocapGL motion capture library for Three.js
+Sample players for the MocapJS motion capture library for Three.js
 
 ## Players
 
@@ -12,15 +12,15 @@ Sample players for the jsMocapGL motion capture library for Three.js
 
 
 ## Requirements:
-* [jsMocapGL](https://github.com/omimo/jsMocapGL)
+* [MocapJS](https://github.com/omimo/MocapJS)
 * [Bower](bower.io)
 
 
 ## Installation Instructions
-1. Clone the jsMocapGL and the players:
+1. Clone the MocapJS and the players:
   
 ```
-$ git clone --recursive https://github.com/omimo/jsMocapGL
+$ git clone --recursive https://github.com/omimo/MocapJS.git
 ```
 
 2. Install the third-party packages with bower:
